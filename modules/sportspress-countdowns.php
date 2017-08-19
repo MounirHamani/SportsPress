@@ -5,7 +5,7 @@ Plugin URI: http://themeboy.com/
 Description: Add countdown widgets to SportsPress.
 Author: ThemeBoy
 Author URI: http://themeboy.com/
-Version: 1.6.1
+Version: 2.0
 */
 
 // Exit if accessed directly
@@ -17,7 +17,7 @@ if ( ! class_exists( 'SportsPress_Countdowns' ) ) :
  * Main SportsPress Countdowns Class
  *
  * @class SportsPress_Countdowns
- * @version	1.6.1
+ * @version	2.0
  */
 class SportsPress_Countdowns {
 
@@ -41,7 +41,7 @@ class SportsPress_Countdowns {
 	*/
 	private function define_constants() {
 		if ( !defined( 'SP_COUNTDOWNS_VERSION' ) )
-			define( 'SP_COUNTDOWNS_VERSION', '1.6.1' );
+			define( 'SP_COUNTDOWNS_VERSION', '2.0' );
 
 		if ( !defined( 'SP_COUNTDOWNS_URL' ) )
 			define( 'SP_COUNTDOWNS_URL', plugin_dir_url( __FILE__ ) );
@@ -77,7 +77,7 @@ class SportsPress_Countdowns {
 	public function add_settings( $settings ) {
 		$settings = array_merge( $settings,
 			array(
-				array( 'title' => __( 'Countdowns', 'sportspress' ), 'type' => 'title', 'id' => 'countdown_options' ),
+				array( 'title' => __( 'Countdown', 'sportspress' ), 'type' => 'title', 'id' => 'countdown_options' ),
 			),
 
 			apply_filters( 'sportspress_countdown_options', array(
@@ -100,6 +100,4 @@ class SportsPress_Countdowns {
 
 endif;
 
-if ( get_option( 'sportspress_load_countdowns_module', 'yes' ) == 'yes' ) {
-	new SportsPress_Countdowns();
-}
+new SportsPress_Countdowns();

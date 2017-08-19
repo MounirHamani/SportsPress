@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin/Meta_Boxes
- * @version     1.6
+ * @version     2.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -24,9 +24,9 @@ class SP_Meta_Box_Player_Columns {
 		?>
 		<div class="sp-instance">
 			<?php if ( $tabs ) { ?>
-			<ul id="sp_column-tabs" class="wp-tab-bar sp-tab-bar">
+			<ul id="sp_column-tabs" class="sp-tab-bar category-tabs">
 				<?php foreach ( $tabs as $index => $post_type ) { $object = get_post_type_object( $post_type ); ?>
-				<li class="wp-tab<?php if ( 0 == $index ) { ?>-active<?php } ?>"><a href="#<?php echo $post_type; ?>-all"><?php echo $object->labels->name; ?></a></li>
+				<li class="<?php if ( 0 == $index ) { ?>tabs<?php } ?>"><a href="#<?php echo $post_type; ?>-all"><?php echo $object->labels->menu_name; ?></a></li>
 				<?php } ?>
 			</ul>
 			<?php

@@ -5,7 +5,7 @@
  * The SportsPress admin sample data class stores demo content.
  *
  * @class 		SP_Admin_Sample_Data
- * @version		1.6
+ * @version		2.3
  * @package		SportsPress/Admin
  * @category	Class
  * @author 		ThemeBoy
@@ -77,7 +77,7 @@ class SP_Admin_Sample_Data {
 		);
 
 		// Jobs
-		$taxonomies['sp_role'] = array( _X( 'Coach', 'example', 'sportspress' ) );
+		$taxonomies['sp_role'] = array( 'Coach' );
 
 		/*
 		 * Insert terms
@@ -112,18 +112,15 @@ class SP_Admin_Sample_Data {
 		// Define teams
 		$teams = array(
 			array(
-				'name' => 'Bentleigh Bluebirds',
-				'abbreviation' => 'BENT',
+				'name' => 'Bluebirds',
 				'url' => 'http://tboy.co/bluebirds',
 			),
 			array(
-				'name' => 'Essendon Eagles',
-				'abbreviation' => 'ESS',
+				'name' => 'Eagles',
 				'url' => 'http://tboy.co/eagles',
 			),
 			array(
-				'name' => 'Kensington Kangaroos',
-				'abbreviation' => 'KENS',
+				'name' => 'Kangaroos',
 				'url' => 'http://tboy.co/kangaroos',
 			),
 		);
@@ -166,7 +163,7 @@ class SP_Admin_Sample_Data {
 			$post['post_title'] = $team['name'];
 			$post['post_type'] = 'sp_team';
 			$post['post_status'] = 'publish';
-			$post['post_content'] = sprintf( $sample_content, __( 'Team', 'sportspress' ), __( 'Teams', 'sportspress' ), admin_url() );
+			$post['post_content'] = sprintf( $sample_content, __( 'Team', 'sportspress' ), __( 'Teams', 'sportspress' ), add_query_arg( 'post_type', 'sp_team', admin_url( 'edit.php' ) ) );
 
 			// Terms
 			$post['tax_input'] = array();
@@ -187,7 +184,6 @@ class SP_Admin_Sample_Data {
 			update_post_meta( $id, '_sp_sample', 1 );
 
 			// Update meta
-			update_post_meta( $id, 'sp_abbreviation', $team['abbreviation'] );
 			update_post_meta( $id, 'sp_url', $team['url'] );
 		}
 
@@ -211,7 +207,7 @@ class SP_Admin_Sample_Data {
 			$post['post_title'] = $name;
 			$post['post_type'] = 'sp_player';
 			$post['post_status'] = 'publish';
-			$post['post_content'] = sprintf( $sample_content, __( 'Player', 'sportspress' ), __( 'Players', 'sportspress' ), admin_url() );
+			$post['post_content'] = sprintf( $sample_content, __( 'Player', 'sportspress' ), __( 'Players', 'sportspress' ), add_query_arg( 'post_type', 'sp_player', admin_url( 'edit.php' ) ) );
 
 			// Terms
 			$post['tax_input'] = array();
@@ -222,7 +218,9 @@ class SP_Admin_Sample_Data {
 			$taxonomies = array( 'sp_position' );
 			foreach ( $taxonomies as $taxonomy ) {
 				$terms = get_terms( $taxonomy, array( 'hide_empty' => 0, 'fields' => 'ids', 'orderby' => 'slug', 'number' => 1, 'offset' => $index % 4 ) );
-				$post['tax_input'][ $taxonomy ] = $terms;
+				if ( $terms && ! is_wp_error( $terms ) ) {
+					$post['tax_input'][ $taxonomy ] = $terms;
+				}
 			};
 
 			// Insert post
@@ -304,7 +302,7 @@ class SP_Admin_Sample_Data {
 			$post['post_title'] = $name;
 			$post['post_type'] = 'sp_staff';
 			$post['post_status'] = 'publish';
-			$post['post_content'] = sprintf( $sample_content, __( 'Staff', 'sportspress' ), __( 'Staff', 'sportspress' ), admin_url() );
+			$post['post_content'] = sprintf( $sample_content, __( 'Staff', 'sportspress' ), __( 'Staff', 'sportspress' ), add_query_arg( 'post_type', 'sp_staff', admin_url( 'edit.php' ) ) );
 
 			// Terms
 			$post['tax_input'] = array();
@@ -364,7 +362,7 @@ class SP_Admin_Sample_Data {
 				'post_title' => $teams[ $i ]['name'] . ' ' . get_option( 'sportspress_event_teams_delimiter', 'vs' ) . ' ' . $teams[ $away_index ]['name'],
 				'post_type' => 'sp_event',
 				'post_status' => $post_status,
-				'post_content' => sprintf( $sample_content, __( 'Event', 'sportspress' ), __( 'Events', 'sportspress' ), admin_url() ),
+				'post_content' => sprintf( $sample_content, __( 'Event', 'sportspress' ), __( 'Events', 'sportspress' ), add_query_arg( 'post_type', 'sp_event', admin_url( 'edit.php' ) ) ),
 				'post_date' => $post_year . '-' . sprintf( '%02d', 3 + $i * 3 ) . '-' . sprintf( '%02d', 5 + $i * 10 ) . ' ' . ( 18 + $i ) . ':00:00',
 				'tax_input' => array(
 					'sp_league' => get_terms( 'sp_league', array( 'hide_empty' => 0, 'fields' => 'ids', 'orderby' => 'id', 'order' => 'ASC', 'number' => 1 ) ),
@@ -471,7 +469,7 @@ class SP_Admin_Sample_Data {
 			'post_title' => _x( 'Fixtures & Results', 'example', 'sportspress' ),
 			'post_type' => 'sp_calendar',
 			'post_status' => 'publish',
-			'post_content' => sprintf( $sample_content, __( 'Calendar', 'sportspress' ), __( 'Calendars', 'sportspress' ), admin_url() )
+			'post_content' => sprintf( $sample_content, __( 'Calendar', 'sportspress' ), __( 'Calendars', 'sportspress' ), add_query_arg( 'post_type', 'sp_calendar', admin_url( 'edit.php' ) ) )
 		);
 
 		// Insert post
@@ -505,7 +503,7 @@ class SP_Admin_Sample_Data {
 			'post_title' => $league->name . ' ' . $season->name,
 			'post_type' => 'sp_table',
 			'post_status' => 'publish',
-			'post_content' => sprintf( $sample_content, __( 'League Table', 'sportspress' ), __( 'League Tables', 'sportspress' ), admin_url() ),
+			'post_content' => sprintf( $sample_content, __( 'League Table', 'sportspress' ), __( 'League Tables', 'sportspress' ), add_query_arg( 'post_type', 'sp_table', admin_url( 'edit.php' ) ) ),
 			'tax_input' => array(
 				'sp_league' => $league->term_id,
 				'sp_season' => $season->term_id,
@@ -547,7 +545,7 @@ class SP_Admin_Sample_Data {
 				'post_title' => get_the_title( $team_id ) . ' ' . _x( 'Roster', 'example', 'sportspress' ),
 				'post_type' => 'sp_list',
 				'post_status' => 'publish',
-				'post_content' => sprintf( $sample_content, __( 'Player List', 'sportspress' ), __( 'Player Lists', 'sportspress' ), admin_url() ),
+				'post_content' => sprintf( $sample_content, __( 'Player List', 'sportspress' ), __( 'Player Lists', 'sportspress' ), add_query_arg( 'post_type', 'sp_list', admin_url( 'edit.php' ) ) ),
 			);
 
 			// Insert post
@@ -592,7 +590,7 @@ class SP_Admin_Sample_Data {
 			'post_title' => _x( 'Player Ranking', 'example', 'sportspress' ),
 			'post_type' => 'sp_list',
 			'post_status' => 'publish',
-			'post_content' => sprintf( $sample_content, __( 'Player List', 'sportspress' ), __( 'Player Lists', 'sportspress' ), admin_url() ),
+			'post_content' => sprintf( $sample_content, __( 'Player List', 'sportspress' ), __( 'Player Lists', 'sportspress' ), add_query_arg( 'post_type', 'sp_list', admin_url( 'edit.php' ) ) ),
 		);
 
 		// Insert post

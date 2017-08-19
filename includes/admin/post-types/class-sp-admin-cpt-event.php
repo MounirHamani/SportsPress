@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin/Post_Types
- * @version     1.7
+ * @version     2.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -28,6 +28,9 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 
 		// Post title fields
 		add_filter( 'enter_title_here', array( $this, 'enter_title_here' ), 1, 2 );
+
+		// Empty data filter
+		add_filter( 'wp_insert_post_empty_content', array( $this, 'wp_insert_post_empty_content' ), 99, 2 );
 
 		// Before data updates
 		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 99, 2 );
@@ -58,9 +61,27 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 	}
 
 	/**
+	 * Mark as not empty when saving event if teams are selected for auto title.
+	 *
+	 * @param array $maybe_empty
+	 * @param array $postarr
+	 * @return bool
+	 */
+	public function wp_insert_post_empty_content( $maybe_empty, $postarr ) {
+		if ( $maybe_empty && 'sp_event' === sp_array_value( $postarr, 'post_type' ) ):
+			$teams = sp_array_value( $postarr, 'sp_team', array() );
+			$teams = array_filter( $teams );
+			if ( sizeof( $teams ) ) return false;
+		endif;
+
+		return $maybe_empty;
+	}
+
+	/**
 	 * Auto-generate an event title based on the team playing if left blank.
 	 *
 	 * @param array $data
+	 * @param array $postarr
 	 * @return array
 	 */
 	public function wp_insert_post_data( $data, $postarr ) {
@@ -101,6 +122,7 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 			'sp_league' => __( 'Competition', 'sportspress' ),
 			'sp_season' => __( 'Season', 'sportspress' ),
 			'sp_venue' => __( 'Venue', 'sportspress' ),
+			'sp_day' => __( 'Match Day', 'sportspress' ),
 		), $existing_columns, array(
 			'title' => __( 'Event', 'sportspress' ),
 		) );
@@ -122,7 +144,7 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 				endif;
 				break;
 			case 'sp_time':
-				echo get_post_time( 'H:i', false, $post_id, true );
+				echo apply_filters( 'sportspress_event_time_admin', get_post_time( 'H:i', false, $post_id, true ) );
 				break;
 			case 'sp_team':
 				$teams = (array)get_post_meta( $post_id, 'sp_team', false );
@@ -160,21 +182,22 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 									$team_results = implode( ' | ', $team_results );
 								endif;
 
-								echo '<a class="sp-result sp-tip" tabindex="10" title="' . $team_results . '" data-team="' . $team_id . '" href="#">' . ( $team_result == '' ? '-' : $team_result ) . '</a>';
+								echo '<a class="sp-result sp-tip" tabindex="10" title="' . $team_results . '" data-team="' . $team_id . '" href="#">' . ( $team_result == '' ? '-' : apply_filters( 'sportspress_event_team_result_admin', $team_result, $post_id, $team_id ) ) . '</a>';
 								echo '<input type="text" tabindex="10" class="sp-edit-result hidden small-text" data-team="' . $team_id . '" data-key="' . $main_result . '" value="' . $team_result . '"> ';
 								echo $team->post_title;
 								echo '<br>';
 							endif;
 						endforeach;
 					echo '</div>';
-					?>
-					<div class="row-actions sp-row-actions"><span class="inline hide-if-no-js"><a href="#" class="sp-edit-results"><?php _e( 'Edit Results', 'sportspress' ); ?></a></span></div>
-					<p class="inline-edit-save sp-inline-edit-save hidden">
-						<a href="#inline-edit" class="button-secondary cancel alignleft"><?php _e( 'Cancel' ); ?></a>
-						<?php wp_nonce_field( 'sp-save-inline-results', 'sp-inline-nonce', false ); ?>
-						<a href="#inline-edit" class="button-primary save alignright"><?php _e( 'Update' ); ?></a>
-					</p>
-					<?php
+					if ( current_user_can( 'edit_others_sp_events' ) ) {
+						?>
+						<div class="row-actions sp-row-actions"><span class="inline hide-if-no-js"><a href="#" class="sp-edit-results"><?php _e( 'Edit Results', 'sportspress' ); ?></a></span></div>
+						<p class="inline-edit-save sp-inline-edit-save hidden">
+							<a href="#inline-edit" class="button-secondary cancel alignleft"><?php _e( 'Cancel' ); ?></a>
+							<a href="#inline-edit" class="button-primary save alignright"><?php _e( 'Update' ); ?></a>
+						</p>
+						<?php
+					}
 				endif;
 				break;
 			case 'sp_league':
@@ -185,6 +208,11 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 				break;
 			case 'sp_venue':
 				echo get_the_terms ( $post_id, 'sp_venue' ) ? the_terms( $post_id, 'sp_venue' ) : '&mdash;';
+				break;
+			case 'sp_day':
+				$day = get_post_meta ( $post_id, 'sp_day', true );
+				if ( '' === $day ) $day = __( 'Default', 'sportspress' );
+				echo $day;
 				break;
 		endswitch;
 	}
@@ -225,6 +253,9 @@ class SP_Admin_CPT_Event extends SP_Admin_CPT {
 			'selected' => $selected
 		);
 		sp_dropdown_taxonomies( $args );
+
+		if ( current_user_can( 'edit_others_sp_events' ) )
+			wp_nonce_field( 'sp-save-inline-results', 'sp-inline-nonce', false );
 	}
 
 	/**

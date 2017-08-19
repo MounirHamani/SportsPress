@@ -7,7 +7,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin
- * @version     1.2
+ * @version   2.4
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,7 +25,7 @@ class SP_Admin_Editor {
 	 * Constructor
 	 */
 	public function __construct() {
-		add_action( 'admin_head', array( $this, 'add_shortcode_button' ) );
+		add_action( 'admin_init', array( $this, 'add_shortcode_button' ) );
 		add_filter( 'tiny_mce_version', array( $this, 'refresh_mce' ) );
 		add_filter( 'mce_external_languages', array( $this, 'add_tinymce_lang' ), 10, 1 );
 	}
@@ -62,7 +62,7 @@ class SP_Admin_Editor {
 	 * @return array
 	 */
 	public function register_shortcode_button( $buttons ) {
-		array_push( $buttons, '|', 'sp_shortcodes_button' );
+		array_push( $buttons, 'sp_shortcodes_button' );
 		return $buttons;
 	}
 

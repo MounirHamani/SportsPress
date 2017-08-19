@@ -3,7 +3,7 @@
  * Handle frontend forms
  *
  * @class 		SP_Frontend_Scripts
- * @version		1.7
+ * @version		2.2
  * @package		SportsPress/Classes
  * @category	Class
  * @author 		ThemeBoy
@@ -73,13 +73,7 @@ class SP_Frontend_Scripts {
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-datatables', plugin_dir_url( SP_PLUGIN_FILE ) .'assets/js/jquery.dataTables.min.js', array( 'jquery' ), '1.10.4', true );
 		wp_enqueue_script( 'jquery-countdown', plugin_dir_url( SP_PLUGIN_FILE ) .'assets/js/jquery.countdown.min.js', array( 'jquery' ), '2.0.2', true );
-		wp_enqueue_script( 'sportspress', plugin_dir_url( SP_PLUGIN_FILE ) .'assets/js/sportspress.js', array( 'jquery' ), time(), true );
-
-		if ( is_singular( 'sp_event' ) || is_tax( 'sp_venue' ) ):
-			wp_enqueue_script( 'google-maps', 'https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false', array(), '3.exp', true );
-			wp_enqueue_script( 'sp-maps', plugin_dir_url( SP_PLUGIN_FILE ) .'assets/js/sp-maps.js', array( 'jquery', 'google-maps' ), time(), true );
-			wp_localize_script( 'sp-maps', 'vars', array( 'map_type' => strtoupper( get_option( 'sportspress_map_type', 'ROADMAP' ) ) ) );
-		endif;
+		wp_enqueue_script( 'sportspress', plugin_dir_url( SP_PLUGIN_FILE ) .'assets/js/sportspress.js', array( 'jquery' ), SP()->version, true );
 
 		// Localize scripts
 		wp_localize_script( 'sportspress', 'localized_strings', array( 'days' => __( 'days', 'sportspress' ), 'hrs' => __( 'hrs', 'sportspress' ), 'mins' => __( 'mins', 'sportspress' ), 'secs' => __( 'secs', 'sportspress' ), 'previous' => __( 'Previous', 'sportspress' ), 'next' => __( 'Next', 'sportspress' ) ) );
@@ -136,9 +130,9 @@ class SP_Frontend_Scripts {
 	 * @return void
 	 */
 	public function custom_css() {
-		$enabled = get_option( 'sportspress_enable_frontend_css', 'yes' );
-		$custom = get_option( 'sportspress_custom_css', null );
+		$colors = array_map( 'esc_attr', (array) get_option( 'themeboy', array() ) );
 
+		$custom = get_option( 'sportspress_custom_css', null );
 		$align = get_option( 'sportspress_table_text_align', 'default' );
 		$padding = get_option( 'sportspress_table_padding', null );
 
@@ -148,8 +142,12 @@ class SP_Frontend_Scripts {
 			$offset = ( 'twentyfourteen' == $template ? 48 : 0 );
 		}
 
-		$colors = array_map( 'esc_attr', (array) get_option( 'themeboy', array() ) );
 		if ( empty( $colors ) ) $colors = array_map( 'esc_attr', (array) get_option( 'sportspress_frontend_css_colors', array() ) );
+
+		// Fallback
+		if ( ! isset( $colors['customize'] ) ) {
+			$colors['customize'] = ( 'yes' == get_option( 'sportspress_enable_frontend_css', 'no' ) );
+		}
 
 		// Defaults
 		if ( empty( $colors['primary'] ) ) $colors['primary'] = '#2b353e';
@@ -163,13 +161,13 @@ class SP_Frontend_Scripts {
 		
 		echo '<style type="text/css">';
 
-		if ( $enabled == 'yes' && ! current_theme_supports( 'sportspress' ) && sizeof( $colors ) > 0 ) {
+		if ( $colors['customize'] && ! current_theme_supports( 'sportspress' ) && sizeof( $colors ) > 0 ) {
 			echo ' /* SportsPress Frontend CSS */ ';
 
 			echo '.sp-event-calendar tbody td a,.sp-event-calendar tbody td a:hover{background: none;}';
 
 			if ( isset( $colors['primary'] ) )
-				echo '.sp-data-table th,.sp-calendar th,.sp-data-table tfoot,.sp-calendar tfoot,.sp-button,.sp-heading{background:' . $colors['primary'] . ' !important}.sp-data-table tbody a,.sp-calendar tbody a{color:' . $colors['primary'] . ' !important}';
+				echo '.sp-data-table th,.sp-calendar th,.sp-data-table tfoot,.sp-calendar tfoot,.sp-button,.sp-heading{background:' . $colors['primary'] . ' !important}.sp-calendar tbody a{color:' . $colors['primary'] . ' !important}';
 
 			if ( isset( $colors['background'] ) )
 				echo '.sp-data-table tbody,.sp-calendar tbody{background: ' . $colors['background'] . ' !important}';

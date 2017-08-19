@@ -7,7 +7,7 @@
  * @author 		ThemeBoy
  * @category 	Core
  * @package 	SportsPress/Functions
- * @version     1.7
+ * @version   2.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -86,6 +86,28 @@ function sp_filter_non_empty( $var = '' ) {
 }
 
 /**
+ * Sort array randomly and maintain index association.
+ *
+ * @access public
+ * @param array $array
+ * @return bool
+ */
+function sp_sort_random() {
+	return mt_rand( 0, 1 );
+}
+
+/**
+ * Sort array by name field.
+ *
+ * @access public
+ * @param array $array
+ * @return bool
+ */
+function sp_sort_by_name( $a, $b ) {
+	return strcmp( $a['name'], $b['name'] );
+}
+
+/**
  * let_to_num function.
  *
  * This function transforms the php.ini notation for numbers (like '2M') to an integer.
@@ -130,6 +152,27 @@ function sp_date_format() {
  */
 function sp_time_format() {
 	return apply_filters( 'sportspress_time_format', get_option( 'time_format' ) );
+}
+
+if ( ! function_exists( 'sp_time_from_int' ) ) {
+
+	/**
+	 * Convert number of seconds to formatted time
+	 *
+	 * @access public
+	 * @param mixed $value
+	 * @return string
+	 */
+	function sp_time_value( $value = 0 ) {
+		$intval = intval( $value );
+		$timeval = gmdate( 'i:s', $intval );
+		$hours = floor( $intval / 3600 );
+
+		if ( '00' != $hours )
+			$timeval = $hours . ':' . $timeval;
+
+		return preg_replace( '/^0/', '', $timeval );
+	}
 }
 
 if ( ! function_exists( 'sp_rgb_from_hex' ) ) {
@@ -257,11 +300,14 @@ if ( ! function_exists( 'sp_format_hex' ) ) {
 	 */
 	function sp_format_hex( $hex ) {
 
+		$hex = preg_replace( '/[^A-Fa-f0-9]/', '', $hex );
 	    $hex = trim( str_replace( '#', '', $hex ) );
 
 	    if ( strlen( $hex ) == 3 ) {
 			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
 	    }
+
+	    $hex = substr( $hex, 0, 6 );
 
 	    if ( $hex ) return '#' . $hex;
 	}

@@ -6,6 +6,7 @@ $options = array(
     'event' => array(
         'details', 'results', 'performance'
     ),
+    'team' => array(),
     'player' => array(
         'details', 'statistics'
     ),
@@ -14,6 +15,7 @@ $options = array(
 $options = apply_filters( 'sportspress_shortcodes', $options );
 
 foreach ( $options as $name => $group ) {
+    if ( empty( $group ) ) continue;
     $shortcodes .= $name . '[' . implode( '|', $group ) . ']';
 }
 
@@ -27,10 +29,11 @@ $raw = apply_filters( 'sportspress_tinymce_strings', array(
     'details' =>  __( 'Details', 'sportspress' ),
     'results' =>  __( 'Results', 'sportspress' ),
     'countdown' =>  __( 'Countdown', 'sportspress' ),
-    'performance' =>  __( 'Performance', 'sportspress' ),
+    'performance' =>  __( 'Box Score', 'sportspress' ),
     'calendar' =>  __( 'Calendar', 'sportspress' ),
     'statistics' =>  __( 'Statistics', 'sportspress' ),
-    'table' =>  __( 'League Table', 'sportspress' ),
+    'team' =>  __( 'Team', 'sportspress' ),
+    'standings' =>  __( 'League Table', 'sportspress' ),
     'player' =>  __( 'Player', 'sportspress' ),
     'list' =>  __( 'List', 'sportspress' ),
     'blocks' =>  __( 'Blocks', 'sportspress' ),

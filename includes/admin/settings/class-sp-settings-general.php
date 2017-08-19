@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin
- * @version     1.7
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -27,8 +27,7 @@ class SP_Settings_General extends SP_Settings_Page {
 		add_filter( 'sportspress_settings_tabs_array', array( $this, 'add_settings_page' ), 20 );
 		add_action( 'sportspress_settings_' . $this->id, array( $this, 'output' ) );
 		add_action( 'sportspress_admin_field_timezone', array( $this, 'timezone_setting' ) );
-		add_action( 'sportspress_admin_field_frontend_styles', array( $this, 'frontend_styles_setting' ) );
-		add_action( 'sportspress_admin_field_current_mode', array( $this, 'current_mode_setting' ) );
+		add_action( 'sportspress_admin_field_colors', array( $this, 'colors_setting' ) );
 		add_action( 'sportspress_settings_save_' . $this->id, array( $this, 'save' ) );
 	}
 
@@ -53,24 +52,10 @@ class SP_Settings_General extends SP_Settings_Page {
 				array(
 					'title'     => __( 'Sport', 'sportspress' ),
 					'id'        => 'sportspress_sport',
-					'default'   => 'custom',
+					'default'   => 'none',
 					'type'      => 'sport',
 					'options'   => $presets,
 				),
-
-				array(
-					'title'     => __( 'Mode', 'sportspress' ),
-					'id'        => 'sportspress_load_individual_mode_module',
-					'default'   => 'no',
-					'type'      => 'radio',
-					'options'   => array(
-						'no' => __( 'Team vs team', 'sportspress' ),
-						'yes' => __( 'Player vs player', 'sportspress' ),
-					),
-					'desc_tip' 		=> _x( 'Who competes in events?', 'mode setting description', 'sportspress' ),
-				),
-
-				array( 'type' => 'current_mode' ),
 			)),
 
 			array(
@@ -80,7 +65,7 @@ class SP_Settings_General extends SP_Settings_Page {
 		);
 		
 		$options = array(
-			array( 'type' => 'frontend_styles' ),
+			array( 'type' => 'colors' ),
 		);
 
 		if ( ( $styles = SP_Frontend_Scripts::get_styles() ) && array_key_exists( 'sportspress-general', $styles ) ):
@@ -113,14 +98,17 @@ class SP_Settings_General extends SP_Settings_Page {
 			));
 		endif;
 
-		$options = array_merge( $options, array(
+		$options = array_merge( $options,
+		array(
 			array(
 				'title' 	=> __( 'Custom CSS', 'sportspress' ),
 				'id' 		=> 'sportspress_custom_css',
 				'css' 		=> 'width:100%; height: 130px;',
 				'type' 		=> 'textarea',
 			),
-
+		),
+		
+		apply_filters( 'sportspress_general_script_options', array(
 			array(
 				'title'     => __( 'Scripts', 'sportspress' ),
 				'desc' 		=> __( 'Live countdowns', 'sportspress' ),
@@ -139,14 +127,24 @@ class SP_Settings_General extends SP_Settings_Page {
 				'checkboxgroup'		=> 'end',
 				'desc_tip'	=> __( 'This will enable a shortcode menu to be displayed in the visual editor.', 'sportspress' ),
 			),
-
+		) ),
+		
+		array(
 			array(
 				'title'     => __( 'Tables', 'sportspress' ),
 				'desc' 		=> __( 'Responsive', 'sportspress' ),
-				'id' 		=> 'sportspress_enable_scrollable_tables',
+				'id' 		=> 'sportspress_enable_responsive_tables',
 				'default'	=> 'yes',
 				'type' 		=> 'checkbox',
 				'checkboxgroup'	=> 'start',
+			),
+
+			array(
+				'desc' 		=> __( 'Scrollable', 'sportspress' ),
+				'id' 		=> 'sportspress_enable_scrollable_tables',
+				'default'	=> 'yes',
+				'type' 		=> 'checkbox',
+				'checkboxgroup'	=> '',
 			),
 
 			array(
@@ -156,7 +154,16 @@ class SP_Settings_General extends SP_Settings_Page {
 				'type' 		=> 'checkbox',
 				'checkboxgroup'		=> 'end',
 			),
-		));
+
+			array(
+				'title'     => __( 'Widgets', 'sportspress' ),
+				'desc' 		=> __( 'Unique', 'sportspress' ),
+				'id' 		=> 'sportspress_widget_unique',
+				'default'	=> 'no',
+				'type' 		=> 'checkbox',
+				'desc_tip' 	=> __( 'Hide widget when same as content.', 'sportspress' ),
+			),
+		) );
 
 		if ( apply_filters( 'sportspress_enable_header', false ) ) {
 			$options[] = array(
@@ -184,10 +191,11 @@ class SP_Settings_General extends SP_Settings_Page {
 	 * Save settings
 	 */
 	public function save() {
-		if ( isset( $_POST['sportspress_sport'] ) && ! empty( $_POST['sportspress_sport'] ) && get_option( 'sportspress_sport', null ) != $_POST['sportspress_sport'] ):
+		if ( isset( $_POST['sportspress_sport'] ) && ! empty( $_POST['sportspress_sport'] ) && get_option( 'sportspress_sport', null ) !== $_POST['sportspress_sport'] ):
 			$sport = $_POST['sportspress_sport'];
 			SP_Admin_Sports::apply_preset( $sport );
-    		update_option( '_sp_needs_welcome', 0 );
+  		delete_option( '_sp_needs_welcome' );
+    	update_option( 'sportspress_installed', 1 );
 		endif;
 
 		if ( isset( $_POST['add_sample_data'] ) ):
@@ -211,8 +219,6 @@ class SP_Settings_General extends SP_Settings_Page {
 		if ( isset( $_POST['gmt_offset'] ) )
 			update_option( 'gmt_offset', $_POST['gmt_offset'] );
 
-	    update_option( 'sportspress_enable_frontend_css', isset( $_POST['sportspress_enable_frontend_css'] ) ? 'yes' : 'no' );
-
 		if ( isset( $_POST['sportspress_frontend_css_primary'] ) ) {
 
 			// Save settings
@@ -221,6 +227,7 @@ class SP_Settings_General extends SP_Settings_Page {
 			$text 			= ( ! empty( $_POST['sportspress_frontend_css_text'] ) ) ? sp_format_hex( $_POST['sportspress_frontend_css_text'] ) : '';
 			$heading 		= ( ! empty( $_POST['sportspress_frontend_css_heading'] ) ) ? sp_format_hex( $_POST['sportspress_frontend_css_heading'] ) : '';
 			$link 			= ( ! empty( $_POST['sportspress_frontend_css_link'] ) ) ? sp_format_hex( $_POST['sportspress_frontend_css_link'] ) : '';
+			$customize 		= ( ! empty( $_POST['sportspress_frontend_css_customize'] ) ) ? 1 : '';
 
 			$colors = array(
 				'primary' 		=> $primary,
@@ -228,7 +235,14 @@ class SP_Settings_General extends SP_Settings_Page {
 				'text' 			=> $text,
 				'heading' 		=> $heading,
 				'link' 			=> $link,
+				'customize' 	=> $customize,
 			);
+
+			// Merge with existing options if available
+			$options = get_option( 'themeboy' );
+			if ( is_array( $options ) ) {
+				$colors = array_merge( $options, $colors );
+			}
 
 			update_option( 'themeboy', $colors );
 		}
@@ -241,8 +255,8 @@ class SP_Settings_General extends SP_Settings_Page {
 	 * @return void
 	 */
 	public function timezone_setting() {
-		$current_offset = get_option('gmt_offset');
-		$tzstring = get_option('timezone_string');
+		$current_offset = get_option( 'gmt_offset' );
+		$tzstring = get_option( 'timezone_string' );
 
 		$check_zone_info = true;
 
@@ -281,13 +295,13 @@ class SP_Settings_General extends SP_Settings_Page {
 	 * @access public
 	 * @return void
 	 */
-	public function frontend_styles_setting() {
+	public function colors_setting() {
 		// Define color schemes each with 5 colors: Primary, Background, Text, Heading, Link
 		$color_schemes = apply_filters( 'sportspress_color_schemes', array(
 			'ThemeBoy' => array( '2b353e', 'f4f4f4', '222222', 'ffffff', '00a69c' ),
 			'Gold' => array( '333333', 'f7f7f7', '333333', 'd8bf94', '9f8958' ),
 			'Denim' => array( '0e2440', 'eae5e0', '0e2440', 'ffffff', '2b6291' ),
-			'Freedom' => array( '0d4785', 'ecedee', '333333', 'ffffff', 'c51d27' ),
+			'Patriot' => array( '0d4785', 'ecedee', '333333', 'ffffff', 'c51d27' ),
 			'Metro' => array( '3a7895', '223344', 'ffffff', 'ffffff', 'ffa800' ),
 			'Stellar' => array( '313150', '050528', 'ffffff', 'ffffff', 'e00034' ),
 			'Carbon' => array( '353535', '191919', 'ededed', 'ffffff', 'f67f17' ),
@@ -295,7 +309,7 @@ class SP_Settings_General extends SP_Settings_Page {
 		) );
 		?><tr valign="top" class="themeboy">
 			<th scope="row" class="titledesc">
-				<?php _e( 'Frontend Styles', 'sportspress' ); ?>
+				<?php _e( 'Color Scheme', 'sportspress' ); ?>
 			</th>
 		    <td class="forminp">
 		    	<fieldset>
@@ -322,6 +336,11 @@ class SP_Settings_General extends SP_Settings_Page {
 						$colors = array_map( 'esc_attr', (array) get_option( 'themeboy', array() ) );
 						if ( empty( $colors ) ) $colors = array_map( 'esc_attr', (array) get_option( 'sportspress_frontend_css_colors', array() ) );
 
+						// Fallback
+						if ( ! isset( $colors['customize'] ) ) {
+							$colors['customize'] = ( 'yes' == get_option( 'sportspress_enable_frontend_css', 'no' ) );
+						}
+
 						// Defaults
 						if ( empty( $colors['primary'] ) ) $colors['primary'] = '#2b353e';
 						if ( empty( $colors['background'] ) ) $colors['background'] = '#f4f4f4';
@@ -338,8 +357,8 @@ class SP_Settings_General extends SP_Settings_Page {
 
 						if ( ( $styles = SP_Frontend_Scripts::get_styles() ) && array_key_exists( 'sportspress-general', $styles ) ):
 						    ?><br>
-						    <label for="sportspress_enable_frontend_css">
-								<input name="sportspress_enable_frontend_css" id="sportspress_enable_frontend_css" type="checkbox" value="1" <?php checked( get_option( 'sportspress_enable_frontend_css', 'yes' ), 'yes' ); ?>>
+						    <label for="sportspress_frontend_css_customize">
+								<input name="sportspress_frontend_css_customize" id="sportspress_frontend_css_customize" type="checkbox" value="1" <?php checked( $colors['customize'] ); ?>>
 								<?php _e( 'Enable', 'sportspress' ); ?>
 							</label>
 						<?php endif; ?>
@@ -362,21 +381,6 @@ class SP_Settings_General extends SP_Settings_Page {
 		echo '<div class="sp-color-box"><strong>' . esc_html( $name ) . '</strong>
 	   		<input name="' . esc_attr( $id ). '" id="' . esc_attr( $id ) . '" type="text" value="' . esc_attr( $value ) . '" class="colorpick" /> <div id="colorPickerDiv_' . esc_attr( $id ) . '" class="colorpickdiv"></div>
 	    </div>';
-	}
-
-	/**
-	 * Output script to refresh page when mode is changed.
-	 */
-	function current_mode_setting() {
-		?>
-		<input type="hidden" name="sportspress_individual_mode_module_loaded" value="<?php echo get_option( 'sportspress_load_individual_mode_module', 'no' ); ?>">
-		<?php if ( sp_array_value( $_POST, 'sportspress_load_individual_mode_module', 'no' ) !== sp_array_value( $_POST, 'sportspress_individual_mode_module_loaded', 'no' ) ) { ?>
-			<script type="text/javascript">
-			window.onload = function() {
-				window.location = window.location.href;
-			}
-			</script>
-		<?php }
 	}
 }
 

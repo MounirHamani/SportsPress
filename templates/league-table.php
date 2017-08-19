@@ -4,7 +4,7 @@
  *
  * @author 		ThemeBoy
  * @package 	SportsPress/Templates
- * @version     1.6
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -15,8 +15,10 @@ $defaults = array(
 	'columns' => null,
 	'highlight' => null,
 	'show_full_table_link' => false,
+	'title' => false,
+	'show_title' => get_option( 'sportspress_table_show_title', 'yes' ) == 'yes' ? true : false,
 	'show_team_logo' => get_option( 'sportspress_table_show_logos', 'yes' ) == 'yes' ? true : false,
-	'link_posts' => get_option( 'sportspress_link_teams', 'no' ) == 'yes' ? true : false,
+	'link_posts' => null,
 	'sortable' => get_option( 'sportspress_enable_sortable_tables', 'yes' ) == 'yes' ? true : false,
 	'scrollable' => get_option( 'sportspress_enable_scrollable_tables', 'yes' ) == 'yes' ? true : false,
 	'paginated' => get_option( 'sportspress_table_paginated', 'yes' ) == 'yes' ? true : false,
@@ -25,11 +27,30 @@ $defaults = array(
 
 extract( $defaults, EXTR_SKIP );
 
+if ( ! isset( $link_posts ) ) {
+	if ( 'player' === sp_get_post_mode( $id ) ) {
+		$link_posts = get_option( 'sportspress_link_players', 'yes' ) == 'yes' ? true : false;
+	} else {
+		$link_posts = get_option( 'sportspress_link_teams', 'no' ) == 'yes' ? true : false;
+	}
+}
+
 if ( ! isset( $highlight ) ) $highlight = get_post_meta( $id, 'sp_highlight', true );
 
 $table = new SP_League_Table( $id );
 
-$output = '<h4 class="sp-table-caption">' . get_the_title( $id ) . '</h4>';
+if ( $show_title && false === $title && $id ):
+	$caption = $table->caption;
+	if ( $caption )
+		$title = $caption;
+	else
+		$title = get_the_title( $id );
+endif;
+
+$output = '';
+
+if ( $title )
+	$output .= '<h4 class="sp-table-caption">' . $title . '</h4>';
 
 $output .= '<div class="sp-table-wrapper">';
 
@@ -108,7 +129,7 @@ foreach ( $data as $team_id => $row ):
 		$td_class = ' sp-highlight';
 	endif;
 
-	$output .= '<tr class="' . ( $i % 2 == 0 ? 'odd' : 'even' ) . $tr_class . '">';
+	$output .= '<tr class="' . ( $i % 2 == 0 ? 'odd' : 'even' ) . $tr_class . ' sp-row-no-' . $i . '">';
 
 	// Rank
 	$output .= '<td class="data-rank' . $td_class . '">' . sp_array_value( $row, 'pos' ) . '</td>';
@@ -149,7 +170,7 @@ $output .= '</tbody>' . '</table>';
 $output .= '</div>';
 
 if ( $show_full_table_link )
-	$output .= '<a class="sp-league-table-link sp-view-all-link" href="' . get_permalink( $id ) . '">' . __( 'View full table', 'sportspress' ) . '</a>';
+	$output .= '<div class="sp-league-table-link sp-view-all-link"><a href="' . get_permalink( $id ) . '">' . __( 'View full table', 'sportspress' ) . '</a></div>';
 
 ?>
 <div class="sp-template sp-template-league-table">

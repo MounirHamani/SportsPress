@@ -7,7 +7,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin/Meta_Boxes
- * @version     1.7
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -41,6 +41,13 @@ class SP_Admin_Meta_Boxes {
 					'title' => __( 'Details', 'sportspress' ),
 					'save' => 'SP_Meta_Box_Result_Details::save',
 					'output' => 'SP_Meta_Box_Result_Details::output',
+					'context' => 'side',
+					'priority' => 'default',
+				),
+				'equation' => array(
+					'title' => __( 'Equation', 'sportspress' ),
+					'save' => 'SP_Meta_Box_Result_Equation::save',
+					'output' => 'SP_Meta_Box_Result_Equation::output',
 					'context' => 'normal',
 					'priority' => 'high',
 				),
@@ -50,6 +57,13 @@ class SP_Admin_Meta_Boxes {
 					'title' => __( 'Details', 'sportspress' ),
 					'save' => 'SP_Meta_Box_Performance_Details::save',
 					'output' => 'SP_Meta_Box_Performance_Details::output',
+					'context' => 'normal',
+					'priority' => 'high',
+				),
+				'equation' => array(
+					'title' => __( 'Equation', 'sportspress' ),
+					'save' => 'SP_Meta_Box_Performance_Equation::save',
+					'output' => 'SP_Meta_Box_Performance_Equation::output',
 					'context' => 'normal',
 					'priority' => 'high',
 				),
@@ -109,6 +123,13 @@ class SP_Admin_Meta_Boxes {
 					'context' => 'side',
 					'priority' => 'default',
 				),
+				'mode' => array(
+					'title' => __( 'Mode', 'sportspress' ),
+					'save' => 'SP_Meta_Box_Event_Mode::save',
+					'output' => 'SP_Meta_Box_Event_Mode::output',
+					'context' => 'side',
+					'priority' => 'default',
+				),
 				'details' => array(
 					'title' => __( 'Details', 'sportspress' ),
 					'save' => 'SP_Meta_Box_Event_Details::save',
@@ -124,24 +145,18 @@ class SP_Admin_Meta_Boxes {
 					'priority' => 'default',
 				),
 				'results' => array(
-					'title' => __( 'Event Results', 'sportspress' ),
+					'title' => __( 'Results', 'sportspress' ),
 					'save' => 'SP_Meta_Box_Event_Results::save',
 					'output' => 'SP_Meta_Box_Event_Results::output',
 					'context' => 'normal',
 					'priority' => 'high',
 				),
 				'performance' => array(
-					'title' => __( 'Player Performance', 'sportspress' ),
+					'title' => __( 'Box Score', 'sportspress' ),
 					'save' => 'SP_Meta_Box_Event_Performance::save',
 					'output' => 'SP_Meta_Box_Event_Performance::output',
 					'context' => 'normal',
 					'priority' => 'high',
-				),
-				'editor' => array(
-					'title' => __( 'Article', 'sportspress' ),
-					'output' => 'SP_Meta_Box_Event_Editor::output',
-					'context' => 'normal',
-					'priority' => 'low',
 				),
 			),
 			'sp_team' => array(
@@ -152,11 +167,12 @@ class SP_Admin_Meta_Boxes {
 					'context' => 'side',
 					'priority' => 'default',
 				),
-				'editor' => array(
-					'title' => __( 'Profile', 'sportspress' ),
-					'output' => 'SP_Meta_Box_Team_Editor::output',
+				'staff' => array(
+					'title' => __( 'Staff', 'sportspress' ),
+					'save' => 'SP_Meta_Box_Team_Staff::save',
+					'output' => 'SP_Meta_Box_Team_Staff::output',
 					'context' => 'normal',
-					'priority' => 'low',
+					'priority' => 'high',
 				),
 			),
 			'sp_player' => array(
@@ -194,12 +210,6 @@ class SP_Admin_Meta_Boxes {
 					'context' => 'normal',
 					'priority' => 'high',
 				),
-				'editor' => array(
-					'title' => __( 'Profile', 'sportspress' ),
-					'output' => 'SP_Meta_Box_Player_Editor::output',
-					'context' => 'normal',
-					'priority' => 'low',
-				),
 			),
 			'sp_staff' => array(
 				'shortcode' => array(
@@ -214,12 +224,6 @@ class SP_Admin_Meta_Boxes {
 					'output' => 'SP_Meta_Box_Staff_Details::output',
 					'context' => 'side',
 					'priority' => 'default',
-				),
-				'editor' => array(
-					'title' => __( 'Profile', 'sportspress' ),
-					'output' => 'SP_Meta_Box_Staff_Editor::output',
-					'context' => 'normal',
-					'priority' => 'low',
 				),
 			),
 		);
@@ -287,6 +291,18 @@ class SP_Admin_Meta_Boxes {
 	public function rename_meta_boxes() {
 		remove_meta_box( 'submitdiv', 'sp_event', 'side' );
 		add_meta_box( 'submitdiv', __( 'Event', 'sportspress' ), 'post_submit_meta_box', 'sp_event', 'side', 'high' );
+
+		remove_meta_box( 'postimagediv', 'sp_team', 'side' );
+		add_meta_box( 'postimagediv', __( 'Logo', 'sportspress' ), 'post_thumbnail_meta_box', 'sp_team', 'side', 'low' );
+
+		remove_meta_box( 'postimagediv', 'sp_player', 'side' );
+		add_meta_box( 'postimagediv', __( 'Photo', 'sportspress' ), 'post_thumbnail_meta_box', 'sp_player', 'side', 'low' );
+
+		remove_meta_box( 'postimagediv', 'sp_staff', 'side' );
+		add_meta_box( 'postimagediv', __( 'Photo', 'sportspress' ), 'post_thumbnail_meta_box', 'sp_staff', 'side', 'low' );
+
+		remove_meta_box( 'postimagediv', 'sp_performance', 'side' );
+		add_meta_box( 'postimagediv', __( 'Icon', 'sportspress' ), 'post_thumbnail_meta_box', 'sp_performance', 'side', 'low' );
 	}
 
 	/**
@@ -301,7 +317,7 @@ class SP_Admin_Meta_Boxes {
 		if ( is_int( wp_is_post_revision( $post ) ) ) return;
 		if ( is_int( wp_is_post_autosave( $post ) ) ) return;
 		if ( empty( $_POST['sportspress_meta_nonce'] ) || ! wp_verify_nonce( $_POST['sportspress_meta_nonce'], 'sportspress_save_data' ) ) return;
-		if ( ! current_user_can( 'edit_post', $post_id  ) ) return;
+		if ( ! apply_filters( 'sportspress_user_can', current_user_can( 'edit_post', $post_id  ), $post_id ) ) return;
 		if ( ! is_sp_post_type( $post->post_type ) && ! is_sp_config_type( $post->post_type ) ) return;
 
 		do_action( 'sportspress_process_' . $post->post_type . '_meta', $post_id, $post );

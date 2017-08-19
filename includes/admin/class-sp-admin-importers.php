@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin
- * @version     1.6
+ * @version     2.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -33,6 +33,11 @@ class SP_Admin_Importers {
 				'name' => __( 'SportsPress Events (CSV)', 'sportspress' ),
 				'description' => __( 'Import <strong>events</strong> from a csv file.', 'sportspress'),
 				'callback' => array( $this, 'events_importer' ),
+			),
+			'sp_fixture_csv' => array(
+				'name' => __( 'SportsPress Fixtures (CSV)', 'sportspress' ),
+				'description' => __( 'Import <strong>fixtures</strong> from a csv file.', 'sportspress'),
+				'callback' => array( $this, 'fixtures_importer' ),
 			),
 			'sp_team_csv' => array(
 				'name' => __( 'SportsPress Teams (CSV)', 'sportspress' ),
@@ -66,6 +71,19 @@ class SP_Admin_Importers {
 
 	    // Dispatch
 	    $importer = new SP_Event_Importer();
+	    $importer->dispatch();
+	}
+
+	/**
+	 * Add menu item
+	 */
+	public function fixtures_importer() {
+		$this->includes();
+		
+	    require 'importers/class-sp-fixture-importer.php';
+
+	    // Dispatch
+	    $importer = new SP_Fixture_Importer();
 	    $importer->dispatch();
 	}
 

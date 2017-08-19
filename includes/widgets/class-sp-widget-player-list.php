@@ -2,39 +2,53 @@
 class SP_Widget_Player_list extends WP_Widget {
 
 	function __construct() {
-		$widget_ops = array('classname' => 'widget_player_list widget_sp_player_list', 'description' => __( 'Display a list of players.', 'sportspress' ) );
+		$widget_ops = array('classname' => 'widget_sportspress widget_player_list widget_sp_player_list', 'description' => __( 'Display a list of players.', 'sportspress' ) );
 		parent::__construct('sportspress-player-list', __( 'Player List', 'sportspress' ), $widget_ops);
 	}
 
 	function widget( $args, $instance ) {
 		extract($args);
+		
 		$id = empty($instance['id']) ? 0 : $instance['id'];
+		
 		if ( $id <= 0 ) return;
+		
+		if ( 'yes' == get_option( 'sportspress_widget_unique', 'no' ) && get_the_ID() === $id ) {
+			$format = get_post_meta( $id, 'sp_format', true );
+			if ( 'list' == $format ) return;
+		}
+
 		$title = apply_filters('widget_title', empty($instance['title']) ? '' : $instance['title'], $instance, $this->id_base);
+		$caption = empty($instance['caption']) ? null : $instance['caption'];
 		$number = empty($instance['number']) ? null : $instance['number'];
 		$columns = $instance['columns'];
 		$orderby = empty($instance['orderby']) ? 'default' : $instance['orderby'];
 		$order = empty($instance['order']) ? 'ASC' : $instance['order'];
 		$show_all_players_link = empty($instance['show_all_players_link']) ? false : $instance['show_all_players_link'];
+
+		do_action( 'sportspress_before_widget', $args, $instance, 'player-list' );
 		echo $before_widget;
+
 		if ( $title )
 			echo $before_title . $title . $after_title;
 
 		// Action to hook into
 		do_action( 'sportspress_before_widget_template', $args, $instance, 'player-list' );
 
-		sp_get_template( 'player-list.php', array( 'id' => $id, 'number' => $number, 'columns' => $columns, 'orderby' => $orderby, 'order' => $order, 'grouping' => 0, 'show_all_players_link' => $show_all_players_link ) );
+		sp_get_template( 'player-list.php', array( 'id' => $id, 'title' => $caption, 'number' => $number, 'columns' => $columns, 'orderby' => $orderby, 'order' => $order, 'grouping' => 0, 'show_all_players_link' => $show_all_players_link ) );
 
 		// Action to hook into
 		do_action( 'sportspress_after_widget_template', $args, $instance, 'player-list' );
 
 		echo $after_widget;
+		do_action( 'sportspress_after_widget', $args, $instance, 'player-list' );
 	}
 
 	function update( $new_instance, $old_instance ) {
 		$instance = $old_instance;
 		$instance['title'] = strip_tags($new_instance['title']);
 		$instance['id'] = intval($new_instance['id']);
+		$instance['caption'] = strip_tags($new_instance['caption']);
 		$instance['number'] = intval($new_instance['number']);
 		$instance['columns'] = (array)$new_instance['columns'];
 		$instance['orderby'] = strip_tags($new_instance['orderby']);
@@ -48,9 +62,10 @@ class SP_Widget_Player_list extends WP_Widget {
 	}
 
 	function form( $instance ) {
-		$instance = wp_parse_args( (array) $instance, array( 'title' => '', 'id' => '', 'number' => 5, 'columns' => null, 'orderby' => 'default', 'order' => 'ASC', 'show_all_players_link' => true ) );
+		$instance = wp_parse_args( (array) $instance, array( 'title' => '', 'id' => '', 'caption' => '', 'number' => 5, 'columns' => null, 'orderby' => 'default', 'order' => 'ASC', 'show_all_players_link' => true ) );
 		$title = strip_tags($instance['title']);
 		$id = intval($instance['id']);
+		$caption = strip_tags($instance['caption']);
 		$number = intval($instance['number']);
 		$columns = $instance['columns'];
 		$orderby = strip_tags($instance['orderby']);
@@ -62,6 +77,9 @@ class SP_Widget_Player_list extends WP_Widget {
 		?>
 		<p><label for="<?php echo $this->get_field_id('title'); ?>"><?php _e( 'Title:', 'sportspress' ); ?></label>
 		<input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo esc_attr($title); ?>" /></p>
+
+		<p><label for="<?php echo $this->get_field_id('caption'); ?>"><?php _e( 'Heading:', 'sportspress' ); ?></label>
+		<input class="widefat" id="<?php echo $this->get_field_id('caption'); ?>" name="<?php echo $this->get_field_name('caption'); ?>" type="text" value="<?php echo esc_attr($caption); ?>" /></p>
 
 		<p><label for="<?php echo $this->get_field_id('id'); ?>"><?php printf( __( 'Select %s:', 'sportspress' ), __( 'Player List', 'sportspress' ) ); ?></label>
 		<?php
@@ -97,6 +115,17 @@ class SP_Widget_Player_list extends WP_Widget {
 			$field_name = $this->get_field_name('columns') . '[]';
 			$field_id = $this->get_field_id('columns');
 			?>
+			<label class="button"><input name="<?php echo $field_name; ?>" type="checkbox" id="<?php echo $field_id; ?>-number" value="number" <?php if ( $columns === null || in_array( 'number', $columns ) ): ?>checked="checked"<?php endif; ?>><?php
+				if ( 'default' == $orderby ) {
+					_e( 'Rank', 'sportspress' );
+					echo '/';
+					_e( 'Squad Number', 'sportspress' );
+				} elseif ( in_array( $orderby, array( 'number', 'name' ) ) ) {
+					_e( 'Squad Number', 'sportspress' );
+				} else {
+					_e( 'Rank', 'sportspress' );
+				}
+			?></label>
 			<?php foreach ( $the_columns as $column ): ?>
 				<label class="button"><input name="<?php echo $field_name; ?>" type="checkbox" id="<?php echo $field_id . '-' . $column->post_name; ?>" value="<?php echo $column->post_name; ?>" <?php if ( $columns === null || in_array( $column->post_name, $columns ) ): ?>checked="checked"<?php endif; ?>><?php echo $column->post_title; ?></label>
 			<?php endforeach; ?>

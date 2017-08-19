@@ -21,6 +21,8 @@
  * developer.  It is a safe way to evaluate expressions without putting
  * the system at risk.
  *
+ * Modified as per https://github.com/jlawrence11/eos/issues/2
+ *
  * 2013/04 UPDATE:
  * - Moved to native class functions for PHP5
  * - Removed deprecated `eregi` calls to `preg_match`
@@ -33,7 +35,7 @@
  * - Add factorial support. (ie 5! = 120)
  *
  * @author Jon Lawrence <jlawrence11@gmail.com>
- * @copyright Copyright ©2005-2013, Jon Lawrence
+ * @copyright Copyright Â©2005-2013, Jon Lawrence
  * @license http://opensource.org/licenses/LGPL-2.1 LGPL 2.1 License
  * @package EOS
  * @version 2.0
@@ -71,7 +73,7 @@ if(!defined('DEBUG'))
  * This class was created for PHP4 in 2005, updated to fully PHP5 in 2013.
  * 
  * @author Jon Lawrence <jlawrence11@gmail.com>
- * @copyright Copyright ©2005-2013, Jon Lawrence
+ * @copyright Copyright Â©2005-2013, Jon Lawrence
  * @license http://opensource.org/licenses/LGPL-2.1 LGPL 2.1 License
  * @package Math
  * @subpackage EOS
@@ -126,8 +128,7 @@ class eqEOS {
 	 */
 	private function checkInfix($infix) {
 		if(trim($infix) == "") {
-			throw new Exception("No Equation given", EQEOS_E_NO_EQ);
-			return false;
+			return 0;
 		}
 		//Make sure we have the same number of '(' as we do ')'
 		// and the same # of '[' as we do ']'
@@ -299,8 +300,7 @@ class eqEOS {
 						break;
 					case '/':
 						if($temp[$hold-1] == 0) {
-							throw new Exception("Division by 0 on: '{$temp[$hold-2]} / {$temp[$hold-1]}' in {$this->inFix}", EQEOS_E_DIV_ZERO);
-							return false;
+							return 0;
 						}
 						$temp[$hold-2] = $temp[$hold-2] / $temp[$hold-1];
 						break;
@@ -309,8 +309,7 @@ class eqEOS {
 						break;
 					case '%':
 						if($temp[$hold-1] == 0) {
-							throw new Exception("Division by 0 on: '{$temp[$hold-2]} % {$temp[$hold-1]}' in {$this->inFix}", EQEOS_E_DIV_ZERO);
-							return false;
+							return 0;
 						}
 						$temp[$hold-2] = bcmod($temp[$hold-2], $temp[$hold-1]);
 						break;
@@ -350,7 +349,7 @@ class eqEOS {
 		preg_replace("/\s/", "", $infix);
 
 		//Find all the variables that were passed and replaces them
-		while((preg_match('/(.){0,1}[&$]([a-zA-Z]+)(.){0,1}/', $infix, $match)) != 0) {
+		while((preg_match('/(.){0,1}[&$]([a-zA-Z0-9_]+)(.){0,1}/', $infix, $match)) != 0) {
 
 			//remove notices by defining if undefined.
 			if(!isset($match[3])) {
@@ -396,24 +395,21 @@ class eqEOS {
 				case "sec":
 					$tmp = cos($func);
 					if($tmp == 0) {
-						throw new Exception("Division by 0 on: 'sec({$func}) = 1/cos({$func})' in {$this->inFix}", EQEOS_E_DIV_ZERO);
-						return false;
+						return 0;
 					}
 					$ans = 1/$tmp;
 					break;
 				case "csc":
 					$tmp = sin($func);
 					if($tmp == 0) {
-						throw new Exception("Division by 0 on: 'csc({$func}) = 1/sin({$func})' in {$this->inFix}", EQEOS_E_DIV_ZERO);
-						return false;
+						return 0;
 					}
 					$ans = 1/$tmp;
 					break;
 				case "cot":
 					$tmp = tan($func);
 					if($tmp == 0) {
-						throw new Exception("Division by 0 on: 'cot({$func}) = 1/tan({$func})' in {$this->inFix}", EQEOS_E_DIV_ZERO);
-						return false;
+						return 0;
 					}
 					$ans = 1/$tmp;
 					break;

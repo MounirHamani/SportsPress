@@ -3,11 +3,11 @@
  * Plugin Name: SportsPress
  * Plugin URI: http://themeboy.com/sportspress/
  * Description: Manage your club and its players, staff, events, league tables, and player lists.
- * Version: 1.7.3
+ * Version: 2.4.2
  * Author: ThemeBoy
  * Author URI: http://themeboy.com
  * Requires at least: 3.8
- * Tested up to: 4.1
+ * Tested up to: 4.8
  *
  * Text Domain: sportspress
  * Domain Path: /languages/
@@ -26,17 +26,17 @@ if ( ! class_exists( 'SportsPress' ) ) :
  * Main SportsPress Class
  *
  * @class SportsPress
- * @version	1.7.3
+ * @version	2.4.2
  */
 final class SportsPress {
 
 	/**
 	 * @var string
 	 */
-	public $version = '1.7.3';
+	public $version = '2.4.2';
 
 	/**
-	 * @var SporsPress The single instance of the class
+	 * @var SportsPress The single instance of the class
 	 * @since 0.7
 	 */
 	protected static $_instance = null;
@@ -55,6 +55,11 @@ final class SportsPress {
 	 * @var SP_Formats $formats
 	 */
 	public $formats = null;
+
+	/**
+	 * @var SP_Templates $templates
+	 */
+	public $templates = null;
 
 	/**
 	 * @var array
@@ -120,6 +125,7 @@ final class SportsPress {
 		add_action( 'init', array( $this, 'init' ), 0 );
 		add_action( 'init', array( 'SP_Shortcodes', 'init' ) );
 		add_action( 'after_setup_theme', array( $this, 'setup_environment' ) );
+		add_action( 'tgmpa_register', array( $this, 'extension' ) );
 
 		// Include core modules
 		$this->include_modules();
@@ -138,7 +144,7 @@ final class SportsPress {
 		return array_merge( array(
 			'<a href="' . admin_url( 'admin.php?page=sportspress' ) . '">' . __( 'Settings', 'sportspress' ) . '</a>',
 			'<a href="' . apply_filters( 'sportspress_docs_url', 'http://tboy.co/docs' ) . '">' . __( 'Docs', 'sportspress' ) . '</a>',
-			'<a href="' . apply_filters( 'sportspress_pro_url', 'http://tboy.co/pricing' ) . '">' . __( 'Upgrade', 'sportspress' ) . '</a>',
+			'<a href="' . apply_filters( 'sportspress_pro_url', 'http://tboy.co/pro' ) . '">' . __( 'Upgrade', 'sportspress' ) . '</a>',
 		), $links );
 	}
 
@@ -222,6 +228,7 @@ final class SportsPress {
 		include_once( 'includes/class-sp-modules.php' );						// Defines available modules
 		include_once( 'includes/class-sp-countries.php' );						// Defines continents and countries
 		include_once( 'includes/class-sp-formats.php' );						// Defines custom post type formats
+		include_once( 'includes/class-sp-templates.php' );						// Defines custom post type templates
 		include_once( 'includes/class-sp-feeds.php' );							// Adds feeds
 		
 		// Include template functions making them pluggable by plugins and themes.
@@ -232,6 +239,12 @@ final class SportsPress {
 
 		// WPML-related localization hooks
 		include_once( 'includes/class-sp-wpml.php' );
+
+		// REST API
+		include_once( 'includes/api/class-sp-rest-api.php' );
+
+		// TGMPA
+		include_once( 'includes/libraries/class-tgm-plugin-activation.php' );
 	}
 
 	/**
@@ -281,6 +294,7 @@ final class SportsPress {
 		$this->modules = new SP_Modules();		// Modules class
 		$this->countries = new SP_Countries();	// Countries class
 		$this->formats = new SP_Formats();		// Formats class
+		$this->templates = new SP_Templates();	// Templates class
 		$this->feeds = new SP_Feeds(); 			// Feeds class
 
 		// Load string options
@@ -312,9 +326,77 @@ final class SportsPress {
 		}
 
 		// Add image sizes
+		add_image_size( 'sportspress-crop-medium',  300, 300, true );
 		add_image_size( 'sportspress-fit-medium',  300, 300, false );
 		add_image_size( 'sportspress-fit-icon',  128, 128, false );
 		add_image_size( 'sportspress-fit-mini',  32, 32, false );
+	}
+
+	/**
+	 * Recommend SportsPress extension for available sports.
+	*/
+	public static function extension() {
+		$sport = sp_array_value( $_POST, 'sportspress_sport', get_option( 'sportspress_sport', null ) );
+		if ( ! $sport ) return;
+
+		$plugins = array();
+
+		switch ( $sport ):
+			case 'baseball':
+				$plugins[] = array(
+					'name'        => 'SportsPress for Baseball',
+					'slug'        => 'sportspress-for-baseball',
+					'required'    => false,
+					'version'     => '0.9.2',
+				);
+				break;
+			case 'basketball':
+				$plugins[] = array(
+					'name'        => 'SportsPress for Basketball',
+					'slug'        => 'sportspress-for-basketball',
+					'required'    => false,
+					'version'     => '0.9.1',
+				);
+				break;
+			case 'cricket':
+				$plugins[] = array(
+					'name'        => 'SportsPress for Cricket',
+					'slug'        => 'sportspress-for-cricket',
+					'required'    => false,
+					'version'     => '1.1.1',
+				);
+				break;
+			case 'golf':
+				$plugins[] = array(
+					'name'        => 'SportsPress for Golf',
+					'slug'        => 'sportspress-for-golf',
+					'required'    => false,
+					'version'     => '0.9.1',
+				);
+				break;
+			case 'soccer':
+				$plugins[] = array(
+					'name'        => 'SportsPress for Football (Soccer)',
+					'slug'        => 'sportspress-for-soccer',
+					'required'    => false,
+					'version'     => '0.9.6',
+				);
+				break;
+		endswitch;
+
+		$config = array(
+			'default_path' => '',
+			'menu'         => 'tgmpa-install-plugins',
+			'has_notices'  => true,
+			'dismissable'  => true,
+			'is_automatic' => true,
+			'message'      => '',
+			'strings'      => array(
+				'nag_type' => 'updated'
+			)
+		);
+
+		tgmpa( $plugins, $config );
 	}
 
 	/** Helper functions ******************************************************/

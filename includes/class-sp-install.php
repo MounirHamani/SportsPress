@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Classes
- * @version     1.5
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -22,6 +22,9 @@ class SP_Install {
 	 */
 	public function __construct() {
 		register_activation_hook( SP_PLUGIN_FILE, array( $this, 'install' ) );
+		
+		if ( defined( 'SP_PRO_PLUGIN_FILE' ) )
+			register_activation_hook( SP_PRO_PLUGIN_FILE, array( $this, 'install' ) );
 
 		add_action( 'admin_init', array( $this, 'install_actions' ) );
 		add_action( 'admin_init', array( $this, 'check_version' ), 5 );
@@ -43,31 +46,16 @@ class SP_Install {
 	}
 
 	/**
-	 * Install actions such as installing pages when a button is clicked.
+	 * Basic setup when a button is clicked.
 	 */
 	public function install_actions() {
-		// Install - Add pages button
-		if ( ! empty( $_GET['install_sportspress'] ) ) {
-
-			// We no longer need to install pages
-			delete_option( '_sp_needs_welcome' );
-			delete_transient( '_sp_activation_redirect' );
-
-			// What's new redirect
-			//wp_redirect( admin_url( 'index.php?page=sp-about&sp-installed=true' ) );
-			//exit;
-
-		// Skip button
-		} elseif ( ! empty( $_GET['skip_install_sportspress'] ) ) {
+		if ( ! empty( $_GET['skip_install_sportspress'] ) ) {
 
 			// We no longer need to install configs
 			delete_option( '_sp_needs_welcome' );
+	    update_option( 'sportspress_installed', 1 );
+	    update_option( 'sportspress_completed_setup', 1 );
 			delete_transient( '_sp_activation_redirect' );
-
-			// What's new redirect
-			wp_redirect( admin_url( 'index.php?page=sp-about' ) );
-			exit;
-			
 		}
 	}
 
@@ -88,13 +76,11 @@ class SP_Install {
 		// Queue upgrades
 		$current_version = get_option( 'sportspress_version', null );
 
+		// Do upgrades
+		$this->upgrades( $current_version );
+
 		// Update version
 		update_option( 'sportspress_version', SP()->version );
-
-		// Check if pages are needed
-		if ( ! get_option( 'sportspress_sport' ) ) {
-			update_option( '_sp_needs_welcome', 1 );
-		}
 
 		// Flush rules after install
 		flush_rewrite_rules();
@@ -131,15 +117,6 @@ class SP_Install {
 	    add_option( 'sportspress_frontend_css_text', '#222222' );
 	    add_option( 'sportspress_frontend_css_heading', '#ffffff' );
 	    add_option( 'sportspress_frontend_css_link', '#00a69c' );
-
-		if ( ! get_option( 'sportspress_installed' ) ) {
-			// Configure default sport
-			$sport = 'custom';
-		    update_option( 'sportspress_sport', $sport );
-
-			// Flag as installed
-			update_option( 'sportspress_installed', 1 );
-		}
 	}
 
 	/**
@@ -237,6 +214,7 @@ class SP_Install {
 		            'delete_posts' 					=> true,
 		            'edit_posts' 					=> true,
 		            'upload_files' 					=> true,
+					'manage_categories' 			=> true,
 
 		            'edit_sp_event'					=> true,
 		            'read_sp_event'					=> true,
@@ -247,6 +225,9 @@ class SP_Install {
 		            'delete_sp_events' 				=> true,
 		            'delete_published_sp_events' 	=> true,
 		            'edit_published_sp_events' 		=> true,
+					'manage_sp_event_terms' 		=> true,
+					'edit_sp_event_terms' 			=> true,
+					'delete_sp_event_terms' 		=> true,
 					'assign_sp_event_terms' 		=> true,
 
 		            'edit_sp_team'					=> true,
@@ -289,6 +270,7 @@ class SP_Install {
 		            'read_sp_player'				=> true,
 		            'delete_sp_player'				=> true,
 		            'edit_sp_players' 				=> true,
+		            'edit_others_sp_players'		=> true,
 		            'publish_sp_players' 			=> true,
 		            'delete_sp_players' 			=> true,
 		            'delete_published_sp_players' 	=> true,
@@ -299,6 +281,7 @@ class SP_Install {
 		            'read_sp_staff'					=> true,
 		            'delete_sp_staff'				=> true,
 		            'edit_sp_staffs' 				=> true,
+		            'edit_others_sp_staffs'			=> true,
 		            'publish_sp_staffs' 			=> true,
 		            'delete_sp_staffs' 				=> true,
 		            'delete_published_sp_staffs' 	=> true,
@@ -309,10 +292,14 @@ class SP_Install {
 		            'read_sp_event'					=> true,
 		            'delete_sp_event'				=> true,
 		            'edit_sp_events' 				=> true,
+		            'edit_others_sp_events' 		=> true,
 		            'publish_sp_events' 			=> true,
 		            'delete_sp_events' 				=> true,
 		            'delete_published_sp_events' 	=> true,
 		            'edit_published_sp_events' 		=> true,
+					'manage_sp_event_terms' 		=> true,
+					'edit_sp_event_terms' 			=> true,
+					'delete_sp_event_terms' 		=> true,
 					'assign_sp_event_terms' 		=> true,
 
 		            'edit_sp_team'					=> true,
@@ -391,6 +378,63 @@ class SP_Install {
 	}
 
 	/**
+	 * Make adjustments based on current version of the plugin
+	 *
+	 * @access public
+	 * @return void
+	 */
+	public function upgrades( $version = null ) {
+		if ( empty( $version ) ) return;
+		
+		if ( version_compare( $version, '2.0', '<' ) ) {
+			update_option( 'sportspress_player_columns', 'manual' );
+		}
+		
+		if ( version_compare( $version, '2.1', '<' ) ) {
+			update_option( 'sportspress_player_show_selector', 'no' );
+			update_option( 'sportspress_event_performance_show_minutes', 'no' );
+		}
+		
+		if ( version_compare( $version, '2.1.3', '<' ) ) {
+			$layout = get_option( 'sportspress_player_template_order' );
+			if ( is_array( $layout ) ) {
+				array_unshift( $layout, 'selector' );
+				update_option( 'sportspress_player_template_order', $layout );
+			}
+
+			$layout = get_option( 'sportspress_staff_template_order' );
+			if ( is_array( $layout ) ) {
+				array_unshift( $layout, 'selector' );
+				update_option( 'sportspress_staff_template_order', $layout );
+			}
+		}
+		
+		if ( version_compare( $version, '2.2', '<' ) ) {
+			update_option( 'sportspress_frontend_styles', 'no' );
+			update_option( 'sportspress_event_show_timeline', 'no' );
+			update_option( 'sportspress_event_logos_show_team_names', 'no' );
+		}
+		
+		if ( version_compare( $version, '2.2.3', '<' ) ) {
+			$option = get_option( 'sportspress_player_show_total', 'no' );
+			update_option( 'sportspress_player_show_career_total', $option );
+		}
+		
+		if ( version_compare( $version, '2.2.11', '<' ) ) {
+			update_option( 'sportspress_completed_setup', 1 );
+			update_option( 'sportspress_registration_name_inputs', 'no' );
+			update_option( 'sportspress_registration_add_player', 'no' );
+
+			$individual_mode = get_option( 'sportspress_load_individual_mode_module', 'no' );
+			if ( 'yes' === $individual_mode ) {
+				update_option( 'sportspress_mode', 'player' );
+			} else {
+				update_option( 'sportspress_mode', 'team' );
+			}
+		}
+	}
+
+	/**
 	 * Get capabilities for SportsPress - these are assigned during installation or reset
 	 *
 	 * @access public
@@ -462,6 +506,7 @@ class SP_Install {
 				foreach ( $cap_group as $cap ) {
 					$wp_roles->remove_cap( 'sp_player', $cap );
 					$wp_roles->remove_cap( 'sp_staff', $cap );
+					$wp_roles->remove_cap( 'sp_event_manager', $cap );
 					$wp_roles->remove_cap( 'sp_team_manager', $cap );
 					$wp_roles->remove_cap( 'sp_league_manager', $cap );
 					$wp_roles->remove_cap( 'administrator', $cap );

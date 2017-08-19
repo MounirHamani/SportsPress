@@ -16,6 +16,7 @@ jQuery(document).ready(function($){
 	// Chosen select
 	$(".chosen-select, #poststuff #post_author_override").chosen({
 		allow_single_deselect: true,
+		search_contains: true,
 		single_backstroke_delete: false,
 		disable_search_threshold: 10,
 		placeholder_text_multiple: localized_strings.none
@@ -23,9 +24,11 @@ jQuery(document).ready(function($){
 
 	// Auto key placeholder
 	$("#poststuff #title").on("keyup", function() {
-		val = $(this).val().replace(/[^a-z]/gi,"").toLowerCase();
-		$("#sp_key").attr("placeholder", val);
-		$("#sp_default_key").val(val);
+		val = $(this).val()
+		lc = val.replace(/[^a-z]/gi,"").toLowerCase();
+		$("#sp_key").attr("placeholder", lc);
+		$("#sp_default_key").val(lc);
+		$("#sp_singular").attr("placeholder", val);
 	});
 
 	// Activate auto key placeholder
@@ -49,12 +52,12 @@ jQuery(document).ready(function($){
 
 	// Tab switcher
 	$(".sp-tab-panel").siblings(".sp-tab-bar").find("a").click(function() {
-		$(this).closest("li").removeClass("wp-tab").addClass("wp-tab-active").siblings().removeClass("wp-tab-active").addClass("wp-tab").closest(".wp-tab-bar").siblings($(this).attr("href")).show().trigger('checkCheck').siblings(".wp-tab-panel").hide();
+		$(this).closest("li").addClass("tabs").siblings().removeClass("tabs").closest(".sp-tab-bar").siblings($(this).attr("href")).show().trigger('checkCheck').siblings(".sp-tab-panel").hide();
 		return false;
 	});
 
 	// Tab filter
-	$(".sp-tab-panel").siblings(".sp-tab-select").find("select").change(function() {
+	$(".sp-tab-filter-panel").siblings(".sp-tab-select").find("select").change(function() {
 		var val = $(this).val();
 		var filter = ".sp-filter-"+val;
 		var $filters = $(this).closest(".sp-tab-select").siblings(".sp-tab-select");
@@ -86,7 +89,7 @@ jQuery(document).ready(function($){
 	});
 
 	// Trigger tab filter
-	$(".sp-tab-panel").siblings(".sp-tab-select").find("select").change();
+	$(".sp-tab-filter-panel").siblings(".sp-tab-select").find("select").change();
 
 	// Dropdown filter
 	$(".sp-dropdown-target").siblings(".sp-dropdown-filter").find("select").change(function() {
@@ -195,7 +198,7 @@ jQuery(document).ready(function($){
 			placeholder += adjustment - current_adjustment;
 		}
 		$el.attr("placeholder", placeholder);
-	});
+	}).change();
 
 	// Data table keyboard navigation
 	$(".sp-data-table tbody tr td input:text").keydown(function(event) {
@@ -219,7 +222,7 @@ jQuery(document).ready(function($){
 			if(event.keyCode == 40){
 				row += 1;
 			}
-			$el.closest("tbody").find("tr:nth-child("+row+") td:nth-child("+col+") input:text").focus();
+			$el.closest("tbody").find("tr:nth-child("+row+") td:nth-child("+col+") input:text").first().focus();
 		}
 	});
 
@@ -236,7 +239,7 @@ jQuery(document).ready(function($){
 	});
 
 	// Total stats calculator
-	$(".sp-data-table .sp-total input").on("updateTotal", function() {
+	$(".sp-data-table .sp-total input[data-sp-format=number][data-sp-total-type!=average]").on("updateTotal", function() {
 		index = $(this).parent().index();
 		var sum = 0;
 		$(this).closest(".sp-data-table").find(".sp-post").each(function() {
@@ -245,7 +248,7 @@ jQuery(document).ready(function($){
 				val = $(this).find("td").eq(index).find("input").attr("placeholder");
 			}
 			if($.isNumeric(val)) {
-				sum += parseInt(val, 10);
+				sum += parseFloat(val, 10);
 			}
 		});
 		$(this).attr("placeholder", sum);
@@ -254,15 +257,35 @@ jQuery(document).ready(function($){
 	// Activate total stats calculator
 	if($(".sp-data-table .sp-total").size()) {
 		$(".sp-data-table .sp-post td input").on("keyup", function() {
-			$(this).closest(".sp-data-table").find(".sp-total td").eq($(this).parent().index()).find("input").trigger("updateTotal");
+			$(this).closest(".sp-data-table").find(".sp-total td").eq($(this).parent().index()).find("input[data-sp-format=number][data-sp-total-type!=average]").trigger("updateTotal");
 		});
 	}
 
 	// Trigger total stats calculator
-	$(".sp-data-table .sp-total input").trigger("updateTotal");
+	$(".sp-data-table .sp-total input[data-sp-format=number][data-sp-total-type!=average]").trigger("updateTotal");
+
+	// Sync inputs
+	$(".sp-sync-input").on("keyup", function() {
+		name = $(this).attr("name");
+		$el = $("input[name='"+name+"']");
+		if ( $el.length > 1 ) {
+			val = $(this).val();
+			$el.val(val);
+		}
+	});
+
+	// Sync selects
+	$(".sp-sync-select").on("change", function() {
+		name = $(this).attr("name");
+		$el = $("select[name='"+name+"']")
+		if ( $el.length > 1 ) {
+			val = $(this).val();
+			$el.val(val);
+		}
+	});
 
 	// Select all checkboxes
-	$(".sp-select-all").change(function() {
+	$(".sp-select-all-range").on("change", ".sp-select-all", function() {
 		$range = $(this).closest(".sp-select-all-range");
 		$range.find("input[type=checkbox]").prop("checked", $(this).prop("checked"));
 	});
@@ -290,6 +313,13 @@ jQuery(document).ready(function($){
 		handle: ".icon",
 		axis: "y"
 	});
+	
+	// Sortable lists
+    $( ".sp-sortable-list" ).sortable({
+    	handle: ".sp-item-handle",
+		placeholder: "sp-item-placeholder",
+		connectWith: ".sp-connected-list"
+    });
 
 	// Autosave
 	$(".sp-autosave").change(function() {
@@ -336,27 +366,50 @@ jQuery(document).ready(function($){
 	// Format selector
 	$(".sp-format-selector select:first").change(function() {
 
-		$precisionselector = $(".sp-precision-selector input:first");
-		$equationselector = $(".sp-equation-selector select");
-
-		// Precision settings
-		if($(this).val() == "decimal" || $(this).val() == "time") {
-			$precisionselector.prop( "disabled", false );
-		} else {
-			$precisionselector.prop( "disabled", true )
-		}
+		$precisiondiv = $("#sp_precisiondiv");
+		$precisioninput = $("#sp_precision");
+		$timeddiv = $("#sp_timeddiv");
+		$equationdiv = $("#sp_equationdiv");
 
 		// Equation settings
-		if($(this).val() == "custom") {
-			$equationselector.prop( "disabled", true );
+		if ($(this).val() == "equation") {
+			$equationdiv.show();
+			$precisiondiv.show();
+			$timeddiv.hide();
+			$precisioninput.prop( "disabled", false );
+		} else if ($(this).val() == "number") {
+			$equationdiv.hide();
+			$precisiondiv.hide();
+			$timeddiv.show();
+			$precisioninput.prop( "disabled", true );
 		} else {
-			$equationselector.prop( "disabled", false );
+			$equationdiv.hide();
+			$precisiondiv.hide();
+			$timeddiv.hide();
+			$precisioninput.prop( "disabled", true );
 		}
 
 	});
 
 	// Trigger format selector
 	$(".sp-format-selector select:first").change();
+
+	// Team era selector
+	$(".sp-team-era-selector select:first-child").change(function() {
+
+		$subselector = $(this).siblings();
+
+		// Sub settings
+		if($(this).val() == 0) {
+			$subselector.hide();
+		} else {
+			$subselector.show();
+		}
+
+	});
+
+	// Trigger team era selector
+	$(".sp-team-era-selector select:first-child").change();
 
 	// Status selector
 	$(".sp-status-selector select:first-child").change(function() {
@@ -414,7 +467,7 @@ jQuery(document).ready(function($){
 	$(".post-type-sp_event #post-formats-select input.post-format").change(function() {
 		layout = $(".post-type-sp_event #post-formats-select input:checked").val();
 		if ( layout == "friendly" ) {
-			$(".sp_event-sp_league-field").hide().find("select").prop("disabled", true);
+			$(".sp_event-sp_league-field").show().find("select").prop("disabled", false);
 			$(".sp_event-sp_season-field").show().find("select").prop("disabled", false);
 		} else {
 			$(".sp_event-sp_league-field").show().find("select").prop("disabled", false);
@@ -456,12 +509,6 @@ jQuery(document).ready(function($){
 
 	// Trigger player list layout change
 	$(".post-type-sp_list #post-formats-select input.post-format").trigger("change");
-
-	// Auto-select hides options
-	$(".sp-select-setting").find("select").change(function() {
-		$(".sp-select-all-range").toggle("manual"==$(this).val());
-		$(this).closest(".sp-select-setting").siblings(".sp-tab-select").find("select").change()
-	});
 
 	// Configure primary result option (Ajax)
 	$(".sp-admin-config-table").on("click", ".sp-primary-result-option", function() {
@@ -620,4 +667,184 @@ jQuery(document).ready(function($){
 
 	// Fitvids
 	$(".sp-fitvids").fitVids();
+
+	// Display configure sport button
+	$(".sp-select-sport").change(function() {
+		$(".sp-configure-sport").hide();
+	});
+
+	// Ajax checklist
+	$(".sp-ajax-checklist").siblings(".sp-tab-select").find("select").change(function() {
+		$(this).closest(".sp-tab-select").siblings(".sp-ajax-checklist").find("ul").html("<li>" + localized_strings.loading + "</li>");
+		$.post( ajaxurl, {
+			action:         "sp-get-players",
+			team: 			$(this).val(),
+			league: 		('yes' == localized_strings.option_filter_by_league) ? $("select[name=\"tax_input[sp_league][]\"]").val() : null,
+			season: 		('yes' == localized_strings.option_filter_by_season) ? $("select[name=\"tax_input[sp_season][]\"]").val() : null,
+			index: 			$(this).closest(".sp-instance").index(),
+			nonce:          $("#sp-get-players-nonce").val()
+		}).done(function( response ) {
+			index = response.data.index;
+			$target = $(".sp-instance").eq(index).find(".sp-ajax-checklist ul");
+			if ( response.success ) {
+				$target.html("");
+				i = 0;
+				if(-1 == response.data.sections) {
+					if(response.data.players.length) {
+						$target.eq(0).append("<li class=\"sp-select-all-container\"><label class=\"selectit\"><input type=\"checkbox\" class=\"sp-select-all\"><strong>" + localized_strings.select_all + "</strong></li>");
+						$(response.data.players).each(function( key, value ) {
+							$target.eq(0).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_player[" + index + "][]\">" + value.post_title + "</li>");
+						});
+						$target.eq(0).append("<li class=\"sp-ajax-show-all-container\"><a class=\"sp-ajax-show-all\" href=\"#show-all-sp_players\">" + localized_strings.show_all + "</a></li>");
+					} else {
+						$target.eq(0).html("<li>" + localized_strings.no_results_found + " <a class=\"sp-ajax-show-all\" href=\"#show-all-sp_players\">" + localized_strings.show_all + "</a></li>");
+					}
+				} else {
+					if ( 1 == response.data.sections ) {
+						defense = i;
+						offense = i+1;
+					} else {
+						offense = i;
+						defense = i+1;
+					}
+					if(response.data.players.length) {
+						$target.eq(offense).append("<li class=\"sp-select-all-container\"><label class=\"selectit\"><input type=\"checkbox\" class=\"sp-select-all\"><strong>" + localized_strings.select_all + "</strong></li>");
+						$target.eq(defense).append("<li class=\"sp-select-all-container\"><label class=\"selectit\"><input type=\"checkbox\" class=\"sp-select-all\"><strong>" + localized_strings.select_all + "</strong></li>");
+						$(response.data.players).each(function( key, value ) {
+							$target.eq(offense).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_offense[" + index + "][]\">" + value.post_title + "</li>");
+							$target.eq(defense).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_defense[" + index + "][]\">" + value.post_title + "</li>");
+						});
+						$target.eq(offense).append("<li class=\"sp-ajax-show-all-container\"><a class=\"sp-ajax-show-all\" href=\"#show-all-sp_offense\">" + localized_strings.show_all + "</a></li>");
+						$target.eq(defense).append("<li class=\"sp-ajax-show-all-container\"><a class=\"sp-ajax-show-all\" href=\"#show-all-sp_defense\">" + localized_strings.show_all + "</a></li>");
+					} else {
+						$target.eq(offense).html("<li>" + localized_strings.no_results_found + " <a class=\"sp-ajax-show-all\" href=\"#show-all-sp_offense\">" + localized_strings.show_all + "</a></li>");
+						$target.eq(defense).html("<li>" + localized_strings.no_results_found + " <a class=\"sp-ajax-show-all\" href=\"#show-all-sp_defense\">" + localized_strings.show_all + "</a></li>");
+					}
+					i++;
+				}
+				i++;
+				if(response.data.staff.length) {
+					$target.eq(i).append("<li class=\"sp-select-all-container\"><label class=\"selectit\"><input type=\"checkbox\" class=\"sp-select-all\"><strong>" + localized_strings.select_all + "</strong></li>");
+					$(response.data.staff).each(function( key, value ) {
+						$target.eq(i).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_staff[" + index + "][]\">" + value.post_title + "</li>");
+					});
+					$target.eq(i).append("<li class=\"sp-ajax-show-all-container\"><a class=\"sp-ajax-show-all\" href=\"#show-all-sp_staffs\">" + localized_strings.show_all + "</a></li>");
+				} else {
+					$target.eq(i).html("<li>" + localized_strings.no_results_found + " <a class=\"sp-ajax-show-all\" href=\"#show-all-sp_staffs\">" + localized_strings.show_all + "</a></li>");
+				}
+			} else {
+				$target.html("<li>" + localized_strings.no_results_found + "</li>");
+			}
+		});
+	});
+
+	// Activate Ajax trigger
+	$(".sp-ajax-trigger").change(function() {
+		$(".sp-ajax-checklist").siblings(".sp-tab-select").find("select").change();
+	});
+
+	// Ajax show all filter
+	$(".sp-tab-panel").on("click", ".sp-ajax-show-all", function() {
+		index = $(this).closest(".sp-instance").index();
+		$(this).parent().html(localized_strings.loading);
+		$.post( ajaxurl, {
+			action:         "sp-get-players",
+			index: 			index,
+			nonce:          $("#sp-get-players-nonce").val()
+		}).done(function( response ) {
+			index = response.data.index;
+			console.log(index);
+			$target = $(".sp-instance").eq(index).find(".sp-ajax-checklist ul");
+			$target.find(".sp-ajax-show-all-container").hide();
+			if ( response.success ) {
+				i = 0;
+				console.log(response.data.sections);
+				if ( -1 == response.data.sections ) {
+					if(response.data.players.length) {
+						$(response.data.players).each(function( key, value ) {
+							if($target.eq(i).find("input[value=" + value.ID + "]").length) return true;
+							$target.eq(i).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_player[" + index + "][]\"> " + value.post_title + "</li>");
+						});
+					} else {
+						$target.eq(i).html("<li>" + localized_strings.no_results_found + "</li>");
+					}
+				} else {
+					if(response.data.players.length) {
+						if ( 1 == response.data.sections ) {
+							defense = i;
+							offense = i+1;
+						} else {
+							offense = i;
+							defense = i+1;
+						}
+						$(response.data.players).each(function( key, value ) {
+							$target.eq(offense).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_offense[" + index + "][]\"> " + value.post_title + "</li>");
+							$target.eq(defense).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_defense[" + index + "][]\"> " + value.post_title + "</li>");
+						});
+					} else {
+						$target.eq(offense).html("<li>" + localized_strings.no_results_found + "</li>");
+						$target.eq(defense).html("<li>" + localized_strings.no_results_found + "</li>");
+					}
+					i++;
+				}
+				i++;
+				if(response.data.staff.length) {
+					$(response.data.staff).each(function( key, value ) {
+						$target.eq(i).append("<li><label class=\"selectit\"><input type=\"checkbox\" value=\"" + value.ID + "\" name=\"sp_staff[" + index + "][]\"> " + value.post_title + "</li>");
+					});
+				} else {
+					$target.eq(i).html("<li>" + localized_strings.no_results_found + "</li>");
+				}
+			} else {
+				$target.html("<li>" + localized_strings.no_results_found + "</li>");
+			}
+		});
+	});
+
+	// Event status selector
+	$('.sp-edit-event-status').click(function(e) {
+		e.preventDefault();
+		$select = $(this).siblings('.sp-event-status-select');
+		if ( $select.is(':hidden') ) {
+			$select.slideDown( 'fast', function() {
+				$select.find( 'input[type="radio"]' ).first().focus();
+			} );
+			$(this).hide();
+		}
+	});
+
+	$('.sp-save-event-status').click(function(e) {
+		e.preventDefault();
+		$select = $(this).closest('.sp-event-status-select');
+		$input = $select.find('input[name=sp_status]:checked');
+		val = $input.val();
+		label = $input.data('sp-event-status');
+		$select.slideUp('fast').siblings('.sp-edit-event-status').show().siblings('.sp-event-status').find('.sp-event-status-display').data('sp-event-status', val).html(label);
+	});
+
+	$('.sp-cancel-event-status').click(function(e) {
+		e.preventDefault();
+		$select = $(this).closest('.sp-event-status-select');
+		val = $select.siblings('.sp-event-status').find('.sp-event-status-display').data('sp-event-status');
+		$select.find('input[value='+val+']').attr('checked', true);
+		$select.slideUp('fast').siblings('.sp-edit-event-status').show();
+	});
+
+	// Box score time converter
+	$('.sp-convert-time-input').change(function() {
+		var s = 0;
+		var val = $(this).val();
+		if (val === '') {
+			$(this).siblings('.sp-convert-time-output').val('');
+			return;
+		}
+		var a = val.split(':').reverse();
+		$.each(a, function( index, value ) {
+			s += parseInt(value) * Math.pow(60, index);
+		});
+		$(this).siblings('.sp-convert-time-output').val(s);
+	});
+
+	// Trigger box score time converter
+	$('.sp-convert-time-input').change();
 });

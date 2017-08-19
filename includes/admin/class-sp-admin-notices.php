@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin
- * @version     1.6.1
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -40,9 +40,18 @@ class SP_Admin_Notices {
 		$screen = get_current_screen();
 		$notices = get_option( 'sportspress_admin_notices', array() );
 
-		if ( get_option( '_sp_needs_welcome' ) == 1 && $screen->id != 'toplevel_page_sportspress' ) {
-			wp_enqueue_style( 'sportspress-activation', plugins_url(  '/assets/css/activation.css', SP_PLUGIN_FILE ) );
-			add_action( 'admin_notices', array( $this, 'install_notice' ) );
+		if ( ! is_object( $screen ) ) return;
+
+		if ( ! get_option( 'sportspress_completed_setup' ) && ! in_array( $screen->id, array( 'dashboard_page_sp-about', 'dashboard_page_sp-credits', 'dashboard_page_sp-translators' ) ) ) {
+			wp_enqueue_style( 'sportspress-activation', plugins_url( '/assets/css/activation.css', SP_PLUGIN_FILE ) );
+			add_action( 'admin_notices', array( $this, 'setup_notice' ) );
+		}
+
+		if ( 'post' == $screen->base ) {
+			$post_id = get_the_ID();
+			if ( ! apply_filters( 'sportspress_user_can', current_user_can( 'edit_post', $post_id  ), $post_id ) ) {
+				add_action( 'admin_notices', array( $this, 'no_access_notice' ) );
+			}
 		}
 
 		if ( ! empty( $_GET['hide_theme_support_notice'] ) ) {
@@ -71,10 +80,17 @@ class SP_Admin_Notices {
 	}
 
 	/**
-	 * Show the install notices
+	 * Show the setup notices
 	 */
-	public function install_notice() {
+	public function setup_notice() {
 		include( 'views/html-notice-install.php' );
+	}
+
+	/**
+	 * Displays a notice when the user doesn't have access to edit a post type
+	 */
+	public function no_access_notice() {
+		include( 'views/html-notice-no-access.php' );
 	}
 
 	/**

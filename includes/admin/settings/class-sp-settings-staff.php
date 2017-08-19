@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin
- * @version     1.6
+ * @version     2.1.6
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -23,9 +23,12 @@ class SP_Settings_Staff extends SP_Settings_Page {
 	public function __construct() {
 		$this->id    = 'staff';
 		$this->label = __( 'Staff', 'sportspress' );
+		$this->template  = 'staff';
 
 		add_filter( 'sportspress_settings_tabs_array', array( $this, 'add_settings_page' ), 20 );
 		add_action( 'sportspress_settings_' . $this->id, array( $this, 'output' ) );
+		add_action( 'sportspress_admin_field_staff_layout', array( $this, 'layout_setting' ) );
+		add_action( 'sportspress_admin_field_staff_tabs', array( $this, 'tabs_setting' ) );
 		add_action( 'sportspress_settings_save_' . $this->id, array( $this, 'save' ) );
 	}
 
@@ -42,6 +45,10 @@ class SP_Settings_Staff extends SP_Settings_Page {
 			),
 
 			apply_filters( 'sportspress_staff_options', array(
+				array( 'type' 	=> 'staff_layout' ),
+
+				array( 'type' 	=> 'staff_tabs' ),
+
 				array(
 					'title'     => __( 'Link', 'sportspress' ),
 					'desc' 		=> __( 'Link staff', 'sportspress' ),
@@ -51,17 +58,25 @@ class SP_Settings_Staff extends SP_Settings_Page {
 				),
 
 				array(
-					'title'     => __( 'Templates', 'sportspress' ),
-					'desc' 		=> __( 'Photo', 'sportspress' ),
-					'id' 		=> 'sportspress_staff_show_photo',
+					'title'     => __( 'Details', 'sportspress' ),
+					'desc' 		=> __( 'Nationality', 'sportspress' ),
+					'id' 		=> 'sportspress_staff_show_nationality',
 					'default'	=> 'yes',
 					'type' 		=> 'checkbox',
 					'checkboxgroup'		=> 'start',
 				),
 
 				array(
-					'desc' 		=> __( 'Details', 'sportspress' ),
-					'id' 		=> 'sportspress_staff_show_details',
+					'desc' 		=> __( 'Current Team', 'sportspress' ),
+					'id' 		=> 'sportspress_staff_show_current_teams',
+					'default'	=> 'yes',
+					'type' 		=> 'checkbox',
+					'checkboxgroup'		=> '',
+				),
+
+				array(
+					'desc' 		=> __( 'Past Teams', 'sportspress' ),
+					'id' 		=> 'sportspress_staff_show_past_teams',
 					'default'	=> 'yes',
 					'type' 		=> 'checkbox',
 					'checkboxgroup'		=> 'end',

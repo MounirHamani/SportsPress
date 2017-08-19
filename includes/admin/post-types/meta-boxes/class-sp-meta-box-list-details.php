@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin/Meta_Boxes
- * @version     1.7
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -20,25 +20,26 @@ class SP_Meta_Box_List_Details {
 	 */
 	public static function output( $post ) {
 		$taxonomies = get_object_taxonomies( 'sp_list' );
+		$caption = get_post_meta( $post->ID, 'sp_caption', true );
 		$team_id = get_post_meta( $post->ID, 'sp_team', true );
+		$era = get_post_meta( $post->ID, 'sp_era', true );
 		$grouping = get_post_meta( $post->ID, 'sp_grouping', true );
 		$orderby = get_post_meta( $post->ID, 'sp_orderby', true );
 		$order = get_post_meta( $post->ID, 'sp_order', true );
 		$select = get_post_meta( $post->ID, 'sp_select', true );
-		if ( ! $select ) {
-			global $pagenow;
-			$select = ( 'post-new.php' == $pagenow ? 'auto' : 'manual' );
-		}
+		$number = get_post_meta( $post->ID, 'sp_number', true );
 		?>
 		<div>
+			<p><strong><?php _e( 'Heading', 'sportspress' ); ?></strong></p>
+			<p><input type="text" id="sp_caption" name="sp_caption" value="<?php echo esc_attr( $caption ); ?>" placeholder="<?php echo esc_attr( get_the_title() ); ?>"></p>
+
 			<?php
 			foreach ( $taxonomies as $taxonomy ) {
 				sp_taxonomy_field( $taxonomy, $post, true );
 			}
 			?>
-			<?php if ( apply_filters( 'sportspress_list_team_selector', true ) ) { ?>
 			<p><strong><?php _e( 'Team', 'sportspress' ); ?></strong></p>
-			<p class="sp-tab-select">
+			<p class="sp-tab-select sp-team-era-selector">
 				<?php
 				$args = array(
 					'post_type' => 'sp_team',
@@ -51,8 +52,12 @@ class SP_Meta_Box_List_Details {
 					sp_post_adder( 'sp_team', __( 'Add New', 'sportspress' ) );
 				endif;
 				?>
+				<select name="sp_era">
+					<option value="all" <?php selected( 'all', $era ); ?>><?php _e( 'All', 'sportspress' ); ?></option>
+					<option value="current" <?php selected( 'current', $era ); ?>><?php _e( 'Current', 'sportspress' ); ?></option>
+					<option value="past" <?php selected( 'past', $era ); ?>><?php _e( 'Past', 'sportspress' ); ?></option>
+				</select>
 			</p>
-			<?php } ?>
 			<p><strong><?php _e( 'Grouping', 'sportspress' ); ?></strong></p>
 			<p>
 			<select name="sp_grouping">
@@ -91,8 +96,15 @@ class SP_Meta_Box_List_Details {
 				</select>
 			</p>
 			<?php
-			sp_post_checklist( $post->ID, 'sp_player', ( 'auto' == $select ? 'none' : 'block' ), array( 'sp_league', 'sp_season', 'sp_current_team' ) );
-			sp_post_adder( 'sp_player', __( 'Add New', 'sportspress' ) );
+			if ( 'manual' == $select ) {
+				sp_post_checklist( $post->ID, 'sp_player', ( 'auto' == $select ? 'none' : 'block' ), array( 'sp_league', 'sp_season', 'sp_current_team' ) );
+				sp_post_adder( 'sp_player', __( 'Add New', 'sportspress' ) );
+			} else {
+				?>
+				<p><strong><?php _e( 'Display', 'sportspress' ); ?></strong></p>
+				<p><input name="sp_number" id="sp_number" type="number" step="1" min="0" class="small-text" placeholder="<?php _e( 'All', 'sportspress' ); ?>" value="<?php echo $number; ?>"> <?php _e( 'Players', 'sportspress' ); ?></p>
+				<?php
+			}
 			?>
 		</div>
 		<?php
@@ -102,11 +114,14 @@ class SP_Meta_Box_List_Details {
 	 * Save meta box data
 	 */
 	public static function save( $post_id, $post ) {
+		update_post_meta( $post_id, 'sp_caption', esc_attr( sp_array_value( $_POST, 'sp_caption', 0 ) ) );
 		update_post_meta( $post_id, 'sp_team', sp_array_value( $_POST, 'sp_team', array() ) );
+		update_post_meta( $post_id, 'sp_era', sp_array_value( $_POST, 'sp_era', array() ) );
 		update_post_meta( $post_id, 'sp_grouping', sp_array_value( $_POST, 'sp_grouping', array() ) );
 		update_post_meta( $post_id, 'sp_orderby', sp_array_value( $_POST, 'sp_orderby', array() ) );
 		update_post_meta( $post_id, 'sp_order', sp_array_value( $_POST, 'sp_order', array() ) );
 		update_post_meta( $post_id, 'sp_select', sp_array_value( $_POST, 'sp_select', array() ) );
+		update_post_meta( $post_id, 'sp_number', sp_array_value( $_POST, 'sp_number', array() ) );
 		sp_update_post_meta_recursive( $post_id, 'sp_player', sp_array_value( $_POST, 'sp_player', array() ) );
 	}
 }

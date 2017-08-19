@@ -4,7 +4,7 @@
  *
  * @author 		ThemeBoy
  * @package 	SportsPress/Templates
- * @version     1.6
+ * @version     2.2.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -17,6 +17,8 @@ $event = new SP_Event( $id );
 $status = $event->status();
 
 if ( 'results' != $status ) return;
+
+if ( ! isset( $caption ) ) $caption = __( 'Results', 'sportspress' );
 
 // Get event result data
 $data = $event->results();
@@ -34,6 +36,7 @@ if ( empty( $data ) )
 
 $scrollable = get_option( 'sportspress_enable_scrollable_tables', 'yes' ) == 'yes' ? true : false;
 $link_teams = get_option( 'sportspress_link_teams', 'no' ) == 'yes' ? true : false;
+$abbreviate_teams = get_option( 'sportspress_abbreviate_teams', 'yes' ) === 'yes' ? true : false;
 $show_outcomes = array_key_exists( 'outcome', $labels );
 
 // Initialize
@@ -61,9 +64,9 @@ foreach( $data as $team_id => $result ):
 
 	$table_rows .= '<tr class="' . ( $i % 2 == 0 ? 'odd' : 'even' ) . '">';
 
-	$team_name = get_the_title( $team_id );
+	$team_name = sp_get_team_name( $team_id, $abbreviate_teams );
 
-	if ( $link_teams ):
+	if ( $link_teams && sp_post_exists( $team_id ) ):
 		$team_name = '<a href="' . get_post_permalink( $team_id ) . '">' . $team_name . '</a>';
 	endif;
 
@@ -75,7 +78,7 @@ foreach( $data as $team_id => $result ):
 		if ( array_key_exists( $key, $result ) && $result[ $key ] != '' ):
 			$value = $result[ $key ];
 		else:
-			$value = '&mdash;';
+			$value = apply_filters( 'sportspress_event_empty_result_string', '&mdash;' );
 		endif;
 		$table_rows .= '<td class="data-' . $key . '">' . $value . '</td>';
 	endforeach;
@@ -95,7 +98,7 @@ if ( empty( $table_rows ) ):
 
 else:
 
-	$output .= '<h4 class="sp-table-caption">' . __( 'Event Results', 'sportspress' ) . '</h4>';
+	$output .= '<h4 class="sp-table-caption">' . $caption . '</h4>';
 
 	$output .= '<div class="sp-table-wrapper">' .
 		'<table class="sp-event-results sp-data-table' . ( $scrollable ? ' sp-scrollable-table' : '' ) . '"><thead>' .

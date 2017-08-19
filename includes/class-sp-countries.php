@@ -5,7 +5,7 @@
  * The SportsPress countries class stores continent/country data.
  *
  * @class 		SP_Countries
- * @version		1.6
+ * @version		2.2
  * @package		SportsPress/Classes
  * @category	Class
  * @author 		ThemeBoy
@@ -155,11 +155,13 @@ class SP_Countries {
 				'fro',
 				'gbr',
 				'ger',
+				'gib',
 				'gre',
 				'hun',
 				'irl',
 				'isl',
 				'ita',
+				'kos',
 				'lie',
 				'ltu',
 				'lux',
@@ -223,6 +225,7 @@ class SP_Countries {
 				'vgb',
 				'vin',
 				'vir',
+				'wif',
 			),
 			__( 'Oceania', 'sportspress' ) => array(
 				'asa',
@@ -342,6 +345,7 @@ class SP_Countries {
 			'geo' => __( "Georgia", 'sportspress' ),
 			'ger' => __( "Germany", 'sportspress' ),
 			'gha' => __( "Ghana", 'sportspress' ),
+			'gib' => __( "Gibraltar", 'sportspress' ),
 			'gnb' => __( "Guinea-Bissau", 'sportspress' ),
 			'gre' => __( "Greece", 'sportspress' ),
 			'grn' => __( "Grenada", 'sportspress' ),
@@ -366,6 +370,7 @@ class SP_Countries {
 			'jpn' => __( "Japan", 'sportspress' ),
 			'kaz' => __( "Kazakhstan", 'sportspress' ),
 			'ken' => __( "Kenya", 'sportspress' ),
+			'kos' => __( "Kosovo", 'sportspress' ),
 			'kgz' => __( "Kyrgyzstan", 'sportspress' ),
 			'kir' => __( "Kiribati", 'sportspress' ),
 			'kor' => __( "South Korea", 'sportspress' ),
@@ -481,6 +486,7 @@ class SP_Countries {
 			'vin' => __( "Saint Vincent and the Grenadines", 'sportspress' ),
 			'vir' => __( "US Virgin Islands", 'sportspress' ),
 			'wal' => __( "Wales", 'sportspress' ),
+			'wif' => __( "West Indies", 'sportspress' ),
 			'yem' => __( "Yemen", 'sportspress' ),
 			'zam' => __( "Zambia", 'sportspress' ),
 			'zim' => __( "Zimbabwe", 'sportspress' ),

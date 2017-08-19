@@ -5,7 +5,7 @@
  * The SportsPress admin sports class stores preset sport data.
  *
  * @class 		SP_Admin_Sports
- * @version		1.7
+ * @version		2.4
  * @package		SportsPress/Admin
  * @category	Class
  * @author 		ThemeBoy
@@ -22,50 +22,45 @@ class SP_Admin_Sports {
 		if ( empty( self::$presets ) ) {
 			$presets = array();
 			self::$options = array(
-				__( 'Sports', 'sportspress' ) => array(),
-				__( 'Esports', 'sportspress' ) => array(),
-				__( 'Other', 'sportspress' ) => array( 'custom' => __( 'Custom', 'sportspress' ) ),
+				'team-sports' => array(),
+				'racket-sports' => array(),
+				'water-sports' => array(),
+				'target-sports' => array(),
+				'esports' => array(),
+				'other' => array(),
 			);
 
-			$dir = scandir( SP()->plugin_path() . '/presets' );
-			$files = array();
-			if ( $dir ) {
-				foreach ( $dir as $key => $value ) {
-					if ( substr( $value, 0, 1 ) !== '.' && strpos( $value, '.' ) !== false ) {
-						$files[] = $value;
+			foreach ( self::$options as $slug => $options ) {
+				$dir = scandir( SP()->plugin_path() . '/presets/' . $slug );
+				$files = array();
+				if ( $dir ) {
+					foreach ( $dir as $key => $value ) {
+						if ( substr( $value, 0, 1 ) !== '.' && strpos( $value, '.' ) !== false ) {
+							$files[] = $value;
+						}
 					}
 				}
-			}
-			foreach( $files as $file ) {
-				$json_data = file_get_contents( SP()->plugin_path() . '/presets/' . $file );
-				$data = json_decode( $json_data, true );
-				if ( ! is_array( $data ) ) continue;
-				$id = preg_replace('/\\.[^.\\s]{3,4}$/', '', $file );
-				$presets[ $id ] = $data;
-				$name = array_key_exists( 'name', $data ) ? __( $data['name'], 'sportspress' ) : $id;
-				self::$options[ __( 'Sports', 'sportspress' ) ][ $id ] = $name;
-			}
-			asort( self::$options[ __( 'Sports', 'sportspress' ) ] );
+				foreach( $files as $file ) {
+					$json_data = file_get_contents( SP()->plugin_path() . '/presets/' . $slug . '/' . $file );
+					$data = json_decode( $json_data, true );
+					if ( ! is_array( $data ) ) continue;
+					$id = preg_replace('/\\.[^.\\s]{3,4}$/', '', $file );
+					$presets[ $id ] = $data;
+					$name = array_key_exists( 'name', $data ) ? __( $data['name'], 'sportspress' ) : $id;
 
-			$dir = scandir( SP()->plugin_path() . '/presets/esports' );
-			$files = array();
-			if ( $dir ) {
-				foreach ( $dir as $key => $value ) {
-					if ( substr( $value, 0, 1 ) !== '.' && strpos( $value, '.' ) !== false ) {
-						$files[] = $value;
+					// Conditionally append filename in parentheses for clarity
+					if ( false === strpos( str_replace( ' ', '', strtolower( $data['name'] ) ), str_replace( '-', '', $id ) ) ) {
+						if ( 4 < strlen( $id ) ) {
+							$name .= ' (' . ucfirst( $id ) . ')';
+						} else {
+							$name .= ' (' . strtoupper( $id ) . ')';
+						}
 					}
+
+					self::$options[ $slug ][ $id ] = $name;
 				}
+				asort( self::$options[ $slug ] );
 			}
-			foreach( $files as $file ) {
-				$json_data = file_get_contents( SP()->plugin_path() . '/presets/esports/' . $file );
-				$data = json_decode( $json_data, true );
-				if ( ! is_array( $data ) ) continue;
-				$id = preg_replace('/\\.[^.\\s]{3,4}$/', '', $file );
-				$presets[ $id ] = $data;
-				$name = array_key_exists( 'name', $data ) ? __( $data['name'], 'sportspress' ) : $id;
-				self::$options[ __( 'Esports', 'sportspress' ) ][ $id ] = $name;
-			}
-			asort( self::$options[ __( 'Esports', 'sportspress' ) ] );
 
 			self::$presets = apply_filters( 'sportspress_get_presets', $presets );
 		}
@@ -100,17 +95,27 @@ class SP_Admin_Sports {
 	 * @return void
 	 */
 	public static function apply_preset( $id ) {
-		if ( 'custom' == $id ) {
-			$preset = array();
-		} else {
-			$preset = self::get_preset( $id );
-		}
+		$preset = self::get_preset( $id );
 
 		// Positions
 		$positions = sp_array_value( $preset, 'positions', array() );
-		foreach ( $positions as $index => $term ) {
-			$slug = $index . '-' . sanitize_title( $term );
-			wp_insert_term( $term, 'sp_position', array( 'slug' => $slug ) );
+		$i = 0;
+		foreach ( $positions as $position ) {
+			if ( is_string( $position ) ) {
+				$name = $position;
+				$sections = array( 0, 1 );
+			} else {
+				$name = sp_array_value( $position, 'name', __( 'Position', 'sportspress' ) );
+				$sections = sp_array_value( $position, 'sections', array( 0, 1 ) );
+			}
+			$slug = $i . '-' . sanitize_title( $name );
+			$term = wp_insert_term( $name, 'sp_position', array( 'slug' => $slug ) );
+			if ( is_wp_error( $term ) ) continue;
+			$t_id = $term['term_id'];
+			$term_meta = get_option( "taxonomy_$t_id" );
+			$term_meta['sp_sections'] = $sections;
+			update_option( "taxonomy_$t_id", $term_meta );
+			$i++;
 		}
 
 		// Outcomes
@@ -135,6 +140,7 @@ class SP_Admin_Sports {
 			if ( empty( $post ) ) continue;
 			$id = self::insert_preset_post( $post, $index );
 			if ( is_array( $result ) && array_key_exists( 'primary', $result ) ) $primary_result = $post['post_name'];
+			update_post_meta( $id, 'sp_equation', sp_array_value( $result, 'equation', null ) );
 		}
 
 		// Make sure statistics and metrics have greater menu order than performance
@@ -151,6 +157,14 @@ class SP_Admin_Sports {
 			if ( isset( $performance['position'] ) ) {
 				wp_set_object_terms( $id, $performance['position'], 'sp_position', false );
 			}
+			update_post_meta( $id, 'sp_singular', sp_array_value( $performance, 'singular', null ) );
+			update_post_meta( $id, 'sp_icon', sp_array_value( $performance, 'icon', null ) );
+			update_post_meta( $id, 'sp_color', sp_array_value( $performance, 'color', null ) );
+			update_post_meta( $id, 'sp_section', sp_array_value( $performance, 'section', -1 ) );
+			update_post_meta( $id, 'sp_format', sp_array_value( $performance, 'format', 'number' ) );
+			update_post_meta( $id, 'sp_equation', sp_array_value( $performance, 'equation', null ) );
+			update_post_meta( $id, 'sp_precision', sp_array_value( $performance, 'precision', 0 ) );
+			update_post_meta( $id, 'sp_timed', sp_array_value( $performance, 'timed', null ) );
 			$i ++;
 		}
 
@@ -189,6 +203,7 @@ class SP_Admin_Sports {
 			$id = self::insert_preset_post( $post, $i + $index );
 			update_post_meta( $id, 'sp_equation', sp_array_value( $statistic, 'equation', null ) );
 			update_post_meta( $id, 'sp_precision', sp_array_value( $statistic, 'precision', 0 ) );
+			update_post_meta( $id, 'sp_type', sp_array_value( $statistic, 'type', 'total' ) );
 		}
 
 
@@ -260,6 +275,21 @@ class SP_Admin_Sports {
 	}
 
 	/**
+	 * Sport category names
+	 * @return null
+	 */
+	public static function sport_category_names() {
+		return apply_filters( 'sportspress_sport_categories', array(
+			'team-sports' => __( 'Team Sports', 'sportspress' ),
+			'racket-sports' => __( 'Racket Sports', 'sportspress' ),
+			'water-sports' => __( 'Water Sports', 'sportspress' ),
+			'target-sports' => __( 'Target Sports', 'sportspress' ),
+			'esports' => __( 'Esports', 'sportspress' ),
+			'other' => __( 'Other', 'sportspress' ),
+		) );
+	}
+
+	/**
 	 * Sport preset names for localization
 	 * @return null
 	 */
@@ -269,6 +299,7 @@ class SP_Admin_Sports {
 		__( 'Cricket', 'sportspress' );
 		__( 'Darts', 'sportspress' );
 		__( 'Floorball', 'sportspress' );
+		__( 'Association Football', 'sportspress' );
 		__( 'American Football', 'sportspress' );
 		__( 'Australian Rules Football', 'sportspress' );
 		__( 'Handball', 'sportspress' );
@@ -278,7 +309,7 @@ class SP_Admin_Sports {
 		__( 'Rugby League', 'sportspress' );
 		__( 'Rugby Union', 'sportspress' );
 		__( 'Snooker', 'sportspress' );
-		__( 'Soccer (Association Football)', 'sportspress' );
+		__( 'Softball', 'sportspress' );
 		__( 'Squash', 'sportspress' );
 		__( 'Table Tennis', 'sportspress' );
 		__( 'Tennis', 'sportspress' );

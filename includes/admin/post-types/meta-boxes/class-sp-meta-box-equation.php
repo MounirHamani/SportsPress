@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin/Meta_Boxes
- * @version     1.6
+ * @version     2.2
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -41,9 +41,12 @@ class SP_Meta_Box_Equation {
 					break;
 				case 'outcome':
 					$options[ 'Outcomes' ] = self::optgroup( 'sp_outcome' );
-					$options[ 'Outcomes' ]['$streak'] = __( 'Streak', 'sportspress' );
-					$options[ 'Outcomes' ]['$last5'] = __( 'Last 5', 'sportspress' );
-					$options[ 'Outcomes' ]['$last10'] = __( 'Last 10', 'sportspress' );
+					break;
+				case 'preset':
+					$options[ 'Presets' ] = array( '$gamesback' => __( 'Games Back', 'sportspress' ), '$homerecord' => __( 'Home Record', 'sportspress' ), '$awayrecord' => __( 'Away Record', 'sportspress' ), '$streak' => __( 'Streak', 'sportspress' ), '$form' => __( 'Form', 'sportspress' ), '$last5' => __( 'Last 5', 'sportspress' ), '$last10' => __( 'Last 10', 'sportspress' ) );
+					break;
+				case 'subset':
+					$options[ 'Subsets' ] = array( '_home' => '@' . __( 'Home', 'sportspress' ), '_away' => '@' . __( 'Away', 'sportspress' ), '_venue' => '@' . __( 'Venue', 'sportspress' ) );
 					break;
 				case 'performance':
 					$options[ 'Performance' ] = self::optgroup( 'sp_performance' );
@@ -90,6 +93,7 @@ class SP_Meta_Box_Equation {
 			<div class="sp-equation">
 				<span class="sp-equation-variable"><?php echo $title; ?> = </span>
 				<span class="sp-equation-formula"><?php
+					$equation = trim( $equation );
 					if ( $equation !== '' ):
 						$equation = explode( ' ', $equation );
 						foreach ( $equation as $part ):
@@ -116,6 +120,19 @@ class SP_Meta_Box_Equation {
 			'posts_per_page' => -1,
 			'orderby' => 'menu_order',
 			'order' => 'ASC',
+			'meta_query' => array(
+        		'relation' => 'OR',
+				array(
+					'key' => 'sp_format',
+					'value' => 'number',
+					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key' => 'sp_format',
+					'value' => array( 'equation', 'text' ),
+					'compare' => 'NOT IN',
+				),
+			),
 		);
 		$vars = get_posts( $args );
 
@@ -148,7 +165,9 @@ class SP_Meta_Box_Equation {
 	 * @return null
 	 */
 	public static function equation_part_labels() {
+		__( 'Presets', 'sportspress' );
 		__( 'Operators', 'sportspress' );
+		__( 'Subsets', 'sportspress' );
 		__( 'Constants', 'sportspress' );
 	}
 }

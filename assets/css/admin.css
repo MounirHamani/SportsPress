@@ -8,15 +8,24 @@
 }
 
 .post-state-format.post-format-league:before, .post-format-icon.post-format-league:before, a.post-state-format.format-league:before {
-	content: "\f481";
+	content: "\f332";
 }
 
 .post-state-format.post-format-friendly:before, .post-format-icon.post-format-friendly:before, a.post-state-format.format-friendly:before {
 	content: "\f328";
 }
 
+.post-state-format.post-format-player:before, .post-format-icon.post-format-player:before, a.post-state-format.format-player:before,
 .post-state-format.post-format-roster:before, .post-format-icon.post-format-roster:before, a.post-state-format.format-roster:before {
 	content: "\f307";
+}
+
+.post-state-format.post-format-team:before, .post-format-icon.post-format-team:before, a.post-state-format.format-team:before {
+	content: "\f334";
+}
+
+.post-state-format.post-format-standings:before, .post-format-icon.post-format-standings:before, a.post-state-format.format-standings:before {
+	content: "\f185";
 }
 
 .post-state-format.post-format-list:before, .post-format-icon.post-format-list:before, a.post-state-format.format-list:before {
@@ -46,6 +55,32 @@
 #sp_editordiv .tmce-active .switch-html,
 #sp_editordiv .html-active .switch-tmce {
 	background: #fdfdfd;
+}
+
+.post-type-sp_player .curtime #timestamp:before {
+	font-family: sportspress, dashicons;
+	content: "\f453";
+}
+
+.post-type-sp_event .sp-event-status:before {
+	color: #82878c;
+	font: 400 20px/1 dashicons;
+	speak: none;
+	display: inline-block;
+	padding: 0 2px 0 0;
+	top: 0;
+	left: -1px;
+	position: relative;
+	vertical-align: top;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-decoration: none!important;
+	content: "\f469";
+}
+
+.post-type-sp_event .sp-event-status-select {
+	line-height: 1.5em;
+	margin-top: 3px;
 }
 
 .sp-link:before {
@@ -106,12 +141,14 @@
 	width: 6%;
 }
 
+.post-type-sp_event .fixed .column-sp_time,
 .post-type-sp_event .fixed .column-sp_league,
 .post-type-sp_calendar .fixed .column-sp_league,
 .post-type-sp_event .fixed .column-sp_season,
 .post-type-sp_calendar .fixed .column-sp_season,
 .post-type-sp_event .fixed .column-sp_venue,
 .post-type-sp_calendar .fixed .column-sp_venue,
+.post-type-sp_event .fixed .column-sp_day,
 .post-type-sp_player .fixed .column-sp_position {
 	width: 10%;
 }
@@ -216,6 +253,18 @@
 	clear: both;
 }
 
+.sp-data-table-container::-webkit-scrollbar {
+	height:12px;
+}
+.sp-data-table-container::-webkit-scrollbar-track {
+	box-shadow:0 0 2px rgba(0,0,0,0.15) inset;
+	background:#f0f0f0;
+}
+.sp-data-table-container::-webkit-scrollbar-thumb {
+	border-radius:6px;
+	background:#ccc;
+}
+
 table.widefat.sp-data-table img {
 	vertical-align: top;
 }
@@ -257,6 +306,8 @@ table.widefat.sp-data-table input[type="text"],
 table.widefat.sp-data-table input[type="number"] {
 	min-width: 1.25em;
 	width: 100%;
+    margin: 1px;
+    padding: 3px 5px;
 }
 
 table.widefat.sp-data-table input.small-text {
@@ -285,6 +336,10 @@ table.widefat.sp-data-table tr:hover a.sp-edit {
 	-moz-opacity: 1;
 	opacity: 1;
 	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+}
+
+table.widefat.sp-data-table th.check-column {
+	padding: 10px 0 6px 2px;
 }
 
 table.widefat.sp-data-table th:not(.check-column) input[type=checkbox] {
@@ -316,6 +371,63 @@ table.widefat.sp-sortable-table tbody tr:nth-child(2n-1) {
 
 table.widefat.sp-sortable-table tbody tr .icon {
 	cursor: move;
+}
+
+.sp-not-found-container {
+	display: none;
+}
+
+.sp-settings-bar {
+	float: none;
+	clear: both;
+}
+
+.sp-settings-section {
+	margin-top: 20px;
+	position: relative;
+	max-width: 1050px;
+	border: 1px solid #e5e5e5;
+	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	background: #fff;
+}
+
+.sp-settings-section h3 {
+	font-size: 14px;
+	padding: 8px 12px;
+	margin: 0;
+	line-height: 1.4;
+	border-bottom: 1px solid #e1e1e1;
+}
+
+.sp-settings-section > .form-table > tbody > tr > th {
+	padding: 13px 15px;
+	font-size: 13px;
+	line-height: 1.4em;
+	background: #f9f9f9;
+	width: 24%;
+	border-top: 1px solid #e1e1e1;
+}
+
+.sp-settings-section > .form-table > tbody > tr > td {
+	border-left: 1px solid #e1e1e1;
+	border-top: 1px solid #e1e1e1;
+	padding: 10px 15px;
+	font-size: 13px;
+	line-height: 1.4em;
+}
+
+.sp-settings-section > .form-table > tbody > tr:first-child > th,
+.sp-settings-section > .form-table > tbody > tr:first-child > td {
+	border-top: none;
+}
+
+.sp-settings-section > p {
+	border-bottom: 1px solid #e1e1e1;
+	padding: 13px 15px;
+	font-size: 13px;
+	background: #f9f9f9;
+	margin: 0;
 }
 
 .sp-admin-config-table th,
@@ -409,6 +521,11 @@ table.widefat.sp-sortable-table tbody tr .icon {
 	-webkit-transition: none;
 }
 
+/* Paragraph */
+.sp-para {
+	margin: 1em 0;
+}
+
 /* TipTip */
 .sp-tip,
 .sp-desc-tip {
@@ -417,6 +534,10 @@ table.widefat.sp-sortable-table tbody tr .icon {
 
 .sp-desc-tip:before {
 	color: #aaa;
+}
+
+.sp-desc-active:before {
+	color: #7ad03a;
 }
 
 #tiptip_holder {
@@ -510,6 +631,148 @@ table.widefat.sp-sortable-table tbody tr .icon {
 	border-left-color: #464646;
 }
 
+/* Toggle switches */
+.sp-toggle-switch {
+	display: none !important;
+}
+
+.sp-toggle-switch + label {
+	width: 32px;
+	height: 16px;
+	border-radius: 16px;
+	position: absolute;
+	right: 12px;
+	top: 13px;
+}
+
+.sp-toggle-switch + label:before,
+.sp-toggle-switch + label:after {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    content: "";
+}
+
+.sp-toggle-switch + label:before {
+    right: 1px;
+    background-color: #e4e4e4;
+    border-radius: 16px;
+    transition: background 0.4s;
+}
+
+.sp-toggle-switch + label:after {
+    width: 16px;
+    background-color: #fff;
+    border-radius: 100%;
+    -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: margin 0.4s;
+}
+
+.sp-toggle-switch:checked + label:before {
+  background-color: #00a0d2;
+}
+
+.sp-toggle-switch:checked + label:after {
+  margin-left: 16px;
+}
+
+.sp-toggle-switch:checked + label:hover:before {
+  background-color: #00b9eb;
+}
+
+/* Tab panels */
+.sp-tab-panel {
+	max-height: 500px;
+}
+
+/* Sortable lists */
+.sp-sortable-list {
+	margin: 0;
+	overflow: hidden;
+	padding-top: 5px;
+	min-height: 50px;
+}
+
+.sp-sortable-list li {
+	float: left;
+	clear: both;
+	max-width: 382px;
+	width: 100%;
+    box-sizing: border-box;
+}
+
+.sp-sortable-list .sp-item-float + .sp-item-float {
+	padding-right: 0;
+}
+
+.sp-item-bar {
+    clear: both;
+    line-height: 1.5em;
+    position: relative;
+    margin: 9px 0 0;
+}
+
+.sp-item-bar .sp-item-handle {
+	background: #fafafa;
+	color: #23282d;
+    border: 1px solid #dfdfdf;
+    position: relative;
+    padding: 10px 15px;
+    height: auto;
+    min-height: 20px;
+    line-height: 30px;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.sp-item-bar .sp-item-handle:hover {
+    border-color: #999;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.1);
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+.sp-item-bar .sp-item-title {
+	font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+    display: block;
+    margin-right: 13em;
+}
+
+.sp-item-settings {
+    display: block;
+    padding: 10px 0 10px 15px;
+    position: relative;
+    z-index: 10;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-top: none;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.js .sp-item-handle {
+	cursor: move;
+}
+
+.sp-sortable-list .sp-item-placeholder {
+    border: 1px dashed #b4b9be;
+    margin: 9px auto 6px;
+    height: 42px;
+}
+
+/* Logo */
+.sp-settings-logo {
+	width: auto;
+	height: auto;
+	max-width: 100%;
+	max-height: 35px;
+}
+
+/* Modules */
 .sp-modules-wrapper {
 	margin-right: 300px;
 	max-width: 750px;
@@ -544,9 +807,13 @@ table.widefat.sp-sortable-table tbody tr .icon {
 	padding: 10px;
 	clear: both;
 	border-top: 1px solid #ddd;
-	background: #f5f5f5;
-	margin: 0 -14px -10px;
+	background: #f9f9f9;
+	margin: 0 -14px;
 	text-align: right;
+}
+
+.sp-modules-sidebar table td .sp-module-actions:last-child {
+	margin-bottom: -10px;
 }
 
 .sp-modules-sidebar table td .sp-module-actions span {
@@ -584,7 +851,11 @@ table.widefat.sp-sortable-table tbody tr .icon {
 }
 
 .sp-modules-wrapper table {
-	margin-bottom: 20px;
+	margin-top: 20px;
+}
+
+table.sp-modules-table th {
+	font-weight: 600;
 }
 
 table.sp-modules-table td {
@@ -612,12 +883,9 @@ table.sp-modules-table td .button {
 	top: 9px;
 }
 
-table.sp-modules-table .button-primary {
-	display: none;
-}
-
-table.sp-modules-table td:hover .button-primary {
-	display: inline-block;
+table.sp-modules-table .sp-desc {
+	color: #aaa;
+	float: right;
 }
 
 table.sp-modules-table [class^="sp-icon-"],
@@ -629,7 +897,7 @@ table.sp-modules-table .dashicons {
 	line-height: 1;
 }
 
-table.sp-modules-table .sp-module-unavailable span {
+table.sp-modules-table .sp-module-unavailable .sp-desc-tip {
 	vertical-align: middle;
 	color: #aaa;
 }
@@ -640,6 +908,17 @@ table.sp-modules-table .sp-module-unavailable span .dashicons {
 	-moz-opacity: 0.8;
 	opacity: 0.8;
 	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+}
+
+/* Licenses */
+
+.sp-licenses-wrapper {
+	max-width: 750px;
+}
+
+.sp-licenses-table th,
+.sp-licenses-table input {
+	vertical-align: middle;
 }
 
 #debug-report {
@@ -714,6 +993,9 @@ table.sp-status-table td mark.yes {
 .about-sportspress-wrap .sp-welcome-logo {
 	display: inline;
 }
+.about-sportspress-wrap .sp-welcome-logo img {
+	border: none;
+}
 .about-sportspress-wrap .sp-about-text {
 	min-height: 0;
 	margin-right: 165px;
@@ -739,9 +1021,19 @@ table.sp-status-table td mark.yes {
 	margin-left: 3px;
 	vertical-align: middle;
 }
+.about-sportspress-wrap .nav-tab-wrapper {
+	clear: both;
+}
 .about-sportspress-wrap .sp-feature {
 	overflow: visible !important;
 	*zoom:1;
+}
+.about-sportspress-wrap .sp-feature > div {
+	float: left;
+	width: 50%;
+}
+.about-sportspress-wrap .sp-feature > div.last-feature {
+	float: right;
 }
 .about-sportspress-wrap .sp-feature:before,
 .about-sportspress-wrap .sp-feature:after {
@@ -772,8 +1064,30 @@ table.sp-status-table td mark.yes {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
+.about-sportspress-wrap .sp-theme-screenshot {
+	float: left;
+	margin-right: 15px;
+}
 .about-sportspress-wrap .form-table th {
 	width: auto;
+}
+.about-sportspress-wrap .sp-top-translations {
+	float: right;
+	margin-left: 20px;
+}
+.about-sportspress-wrap .sp-top-translations .hndle {
+	font-size: 14px;
+	padding: 8px 12px;
+	margin: 0;
+	line-height: 1.4;
+	cursor: auto;
+}
+.about-sportspress-wrap .sp-transifex-chart {
+	padding: 0 12px;
+	text-align: center;
+}
+.about-sportspress-wrap .sp-transifex-chart a {
+	display: inline-block;
 }
 
 /* Tutorials */
@@ -786,6 +1100,9 @@ table.sp-status-table td mark.yes {
 	width: 342px;
 	max-width: 100%;
 	margin: 6px;
+}
+.sp-tutorials-list li th {
+	font-weight: 600;
 }
 .sp-tutorials-list li strong {
 	background: #aaa;
@@ -812,6 +1129,12 @@ table.sp-status-table td mark.yes {
 }
 
 /* Media Queries */
+@media only screen and (max-width: 960px) {
+	.sportspress_page_sportspress-more iframe {
+		/*padding-left: 36px;*/
+	}
+}
+
 @media only screen and (max-width: 850px) {
 	.sp-modules-wrapper {
 		margin-right: 0;
@@ -821,6 +1144,10 @@ table.sp-status-table td mark.yes {
 	.sp-modules-sidebar {
 		margin-right: 0;
 		width: 100%;
+	}
+
+	.sp-tab-panel {
+		max-height: 200px;
 	}
 }
 
@@ -843,8 +1170,33 @@ table.sp-status-table td mark.yes {
 		width: 100%;
 	}
 
+	.sp-settings-section > .form-table > tbody > tr > th {
+		width: auto;
+	}
+
+	.sp-settings-section > .form-table > tbody > tr > td,
+	.sp-settings-section > .form-table > tbody > tr:first-child > td {
+		border-left: none;
+		border-top: 1px solid #e1e1e1;
+	}
+
+	.sp-settings-section .sp-configure-sport {
+		margin-top: 10px;
+	}
+
 	table.sp-modules-table td .button {
 		margin: -3px -7px -3px 10px;
+	}
+
+	.about-sportspress-wrap .sp-top-translations {
+		float: none;
+		margin-left: 0;
+	}
+	
+	.wp-list-table tr:not(.inline-edit-row):not(.no-items) td.column-sp_format,
+	.wp-list-table tr:not(.inline-edit-row):not(.no-items) td.column-sp_icon,
+	.wp-list-table tr:not(.inline-edit-row):not(.no-items) td.column-sp_number {
+		display: table-cell!important;
 	}
 }
 
@@ -856,6 +1208,7 @@ table.sp-status-table td mark.yes {
 		margin-right: 0;
 		padding-right: 0;
 	}
+	
 	.about-sportspress-wrap .sp-badge {
 		float: none;
 		margin: 20px auto 10px;

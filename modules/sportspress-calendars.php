@@ -5,7 +5,7 @@ Plugin URI: http://themeboy.com/
 Description: Add event calendars to SportsPress.
 Author: ThemeBoy
 Author URI: http://themeboy.com/
-Version: 1.6.1
+Version: 2.2
 */
 
 // Exit if accessed directly
@@ -17,7 +17,7 @@ if ( ! class_exists( 'SportsPress_Calendars' ) ) :
  * Main SportsPress Calendars Class
  *
  * @class SportsPress_Calendars
- * @version	1.6.1
+ * @version	2.2
  */
 class SportsPress_Calendars {
 
@@ -33,11 +33,17 @@ class SportsPress_Calendars {
 		add_action( 'add_meta_boxes', array( $this, 'remove_meta_boxes' ), 10 );
 		add_action( 'sportspress_include_post_type_handlers', array( $this, 'include_post_type_handler' ) );
 		add_action( 'sportspress_widgets', array( $this, 'include_widgets' ) );
+		add_action( 'sportspress_create_rest_routes', array( $this, 'create_rest_routes' ) );
+		add_action( 'sportspress_register_rest_fields', array( $this, 'register_rest_fields' ) );
 
 		// Filters
 		add_filter( 'sportspress_meta_boxes', array( $this, 'add_meta_boxes' ) );
 		add_filter( 'sportspress_shortcodes', array( $this, 'add_shortcodes' ) );
-		add_filter( 'sportspress_event_settings', array( $this, 'add_settings' ) );
+		add_filter( 'sportspress_event_settings', array( $this, 'add_event_settings' ) );
+		add_filter( 'sportspress_team_options', array( $this, 'add_team_options' ) );
+		add_filter( 'sportspress_after_team_template', array( $this, 'add_team_template' ), 40 );
+		add_filter( 'sportspress_player_options', array( $this, 'add_player_options' ) );
+		add_filter( 'sportspress_after_player_template', array( $this, 'add_player_template' ), 40 );
 	}
 
 	/**
@@ -45,7 +51,7 @@ class SportsPress_Calendars {
 	*/
 	private function define_constants() {
 		if ( !defined( 'SP_CALENDARS_VERSION' ) )
-			define( 'SP_CALENDARS_VERSION', '1.6.1' );
+			define( 'SP_CALENDARS_VERSION', '2.2' );
 
 		if ( !defined( 'SP_CALENDARS_URL' ) )
 			define( 'SP_CALENDARS_URL', plugin_dir_url( __FILE__ ) );
@@ -80,11 +86,14 @@ class SportsPress_Calendars {
 					'exclude_from_search' 	=> false,
 					'hierarchical' 			=> false,
 					'rewrite' 				=> array( 'slug' => get_option( 'sportspress_calendar_slug', 'calendar' ) ),
-					'supports' 				=> array( 'title', 'author', 'thumbnail' ),
+					'supports' 				=> array( 'title', 'editor', 'author', 'thumbnail' ),
 					'has_archive' 			=> false,
 					'show_in_nav_menus' 	=> true,
-					'show_in_menu' => 'edit.php?post_type=sp_event',
+					'show_in_menu' 			=> 'edit.php?post_type=sp_event',
 					'show_in_admin_bar' 	=> true,
+					'show_in_rest' 			=> true,
+					'rest_controller_class' => 'SP_REST_Posts_Controller',
+					'rest_base' 			=> 'calendars',
 				)
 			)
 		);
@@ -108,13 +117,55 @@ class SportsPress_Calendars {
 
 	/**
 	 * Add widgets.
-	 *
-	 * @return array
 	 */
 	public function include_widgets() {
 		include_once( SP()->plugin_path() . '/includes/widgets/class-sp-widget-event-calendar.php' );
 		include_once( SP()->plugin_path() . '/includes/widgets/class-sp-widget-event-list.php' );
 		include_once( SP()->plugin_path() . '/includes/widgets/class-sp-widget-event-blocks.php' );
+	}
+
+	/**
+	 * Create REST API routes.
+	 */
+	public function create_rest_routes() {
+		$controller = new SP_REST_Posts_Controller( 'sp_calendar' );
+		$controller->register_routes();
+	}
+
+	/**
+	 * Register REST API fields.
+	 */
+	public function register_rest_fields() {
+		register_rest_field( 'sp_calendar',
+			'format',
+			array(
+				'get_callback'    => 'SP_REST_API::get_post_meta',
+				'update_callback' => 'SP_REST_API::update_post_meta',
+				'schema'          => array(
+					'description'     => __( 'Layout', 'sportspress' ),
+					'type'            => 'string',
+					'context'         => array( 'view', 'edit' ),
+					'arg_options'     => array(
+						'sanitize_callback' => 'rest_sanitize_request_arg',
+					),
+				),
+			)
+		);
+		
+		register_rest_field( 'sp_calendar',
+			'data',
+			array(
+				'get_callback'    => 'SP_REST_API::get_post_data',
+				'schema'          => array(
+					'description'     => __( 'Events', 'sportspress' ),
+					'type'            => 'array',
+					'context'         => array( 'view' ),
+					'arg_options'     => array(
+						'sanitize_callback' => 'rest_sanitize_request_arg',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -143,6 +194,13 @@ class SportsPress_Calendars {
 				'context' => 'side',
 				'priority' => 'default',
 			),
+			'columns' => array(
+				'title' => __( 'Columns', 'sportspress' ),
+				'save' => 'SP_Meta_Box_Calendar_Columns::save',
+				'output' => 'SP_Meta_Box_Calendar_Columns::output',
+				'context' => 'side',
+				'priority' => 'default',
+			),
 			'details' => array(
 				'title' => __( 'Details', 'sportspress' ),
 				'save' => 'SP_Meta_Box_Calendar_Details::save',
@@ -156,12 +214,6 @@ class SportsPress_Calendars {
 				'output' => 'SP_Meta_Box_Calendar_Data::output',
 				'context' => 'normal',
 				'priority' => 'high',
-			),
-			'editor' => array(
-				'title' => __( 'Description', 'sportspress' ),
-				'output' => 'SP_Meta_Box_Calendar_Editor::output',
-				'context' => 'normal',
-				'priority' => 'low',
 			),
 		);
 		return $meta_boxes;
@@ -180,11 +232,11 @@ class SportsPress_Calendars {
 	}
 
 	/**
-	 * Add settings.
+	 * Add event settings.
 	 *
 	 * @return array
 	 */
-	public function add_settings( $settings ) {
+	public function add_event_settings( $settings ) {
 		$settings = array_merge( $settings,
 			array(
 				array( 'title' => __( 'Event List', 'sportspress' ), 'type' => 'title', 'id' => 'event_list_options' ),
@@ -269,6 +321,14 @@ class SportsPress_Calendars {
 				),
 
 				array(
+					'title'     => __( 'Teams', 'sportspress' ),
+					'desc' 		=> __( 'Display logos', 'sportspress' ),
+					'id' 		=> 'sportspress_event_blocks_show_logos',
+					'default'	=> 'yes',
+					'type' 		=> 'checkbox',
+				),
+
+				array(
 					'title'     => __( 'Details', 'sportspress' ),
 					'desc' 		=> __( 'Display competition', 'sportspress' ),
 					'id' 		=> 'sportspress_event_blocks_show_league',
@@ -305,7 +365,7 @@ class SportsPress_Calendars {
 					'title' 	=> __( 'Limit', 'sportspress' ),
 					'id' 		=> 'sportspress_event_blocks_rows',
 					'class' 	=> 'small-text',
-					'default'	=> '10',
+					'default'	=> '5',
 					'desc' 		=> __( 'events', 'sportspress' ),
 					'type' 		=> 'number',
 					'custom_attributes' => array(
@@ -320,6 +380,84 @@ class SportsPress_Calendars {
 			)
 		);
 		return $settings;
+	}
+
+	/**
+	 * Add team options.
+	 *
+	 * @return array
+	 */
+	public function add_team_options( $options ) {
+		return array_merge( $options,
+			array(
+				array(
+					'title'     => __( 'Events', 'sportspress' ),
+					'id'        => 'sportspress_team_events_format',
+					'default'   => 'title',
+					'type'      => 'select',
+					'options'   => array(
+						'blocks' 	=> __( 'Blocks', 'sportspress' ),
+						'calendar' 	=> __( 'Calendar', 'sportspress' ),
+						'list' 		=> __( 'List', 'sportspress' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Add player template.
+	 *
+	 * @return array
+	 */
+	public function add_player_template( $templates ) {
+		return array_merge( $templates, array(
+			'events' => array(
+				'title' => __( 'Events', 'sportspress' ),
+				'option' => 'sportspress_player_show_events',
+				'action' => 'sportspress_output_player_events',
+				'default' => 'no',
+			),
+		) );
+	}
+
+	/**
+	 * Add player options.
+	 *
+	 * @return array
+	 */
+	public function add_player_options( $options ) {
+		return array_merge( $options,
+			array(
+				array(
+					'title'     => __( 'Events', 'sportspress' ),
+					'id'        => 'sportspress_player_events_format',
+					'default'   => 'title',
+					'type'      => 'select',
+					'options'   => array(
+						'blocks' 	=> __( 'Blocks', 'sportspress' ),
+						'calendar' 	=> __( 'Calendar', 'sportspress' ),
+						'list' 		=> __( 'List', 'sportspress' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Add team template.
+	 *
+	 * @return array
+	 */
+	public function add_team_template( $templates ) {
+		return array_merge( $templates, array(
+			'events' => array(
+				'title' => __( 'Events', 'sportspress' ),
+				'option' => 'sportspress_team_show_events',
+				'action' => 'sportspress_output_team_events',
+				'default' => 'no',
+			),
+		) );
 	}
 }
 
