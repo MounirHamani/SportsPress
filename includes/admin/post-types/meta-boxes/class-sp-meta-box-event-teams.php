@@ -5,7 +5,7 @@
  * @author 		ThemeBoy
  * @category 	Admin
  * @package 	SportsPress/Admin/Meta_Boxes
- * @version     1.6
+ * @version     2.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
@@ -21,86 +21,152 @@ class SP_Meta_Box_Event_Teams {
 	public static function output( $post ) {
 		$limit = get_option( 'sportspress_event_teams', 2 );
 		$teams = (array) get_post_meta( $post->ID, 'sp_team', false );
-		$league_id = sp_get_the_term_id( $post->ID, 'sp_league', 0 );
-		$season_id = sp_get_the_term_id( $post->ID, 'sp_season', 0 );
-		for ( $i = 0; $i < $limit; $i ++ ):
-			$team = array_shift( $teams );
-			?>
-			<div class="sp-instance">
-				<p class="sp-tab-select sp-tab-select-dummy">
-					<?php
-					$args = array(
-						'taxonomy' => 'sp_league',
-						'name' => 'sp_league_dummy',
-						'class' => 'sp-dummy sp_league-dummy',
-						'show_option_all' => __( 'All', 'sportspress' ),
-						'selected' => $league_id,
-						'values' => 'term_id',
-					);
-					sp_dropdown_taxonomies( $args );
-					?>
-				</p>
-				<p class="sp-tab-select sp-tab-select-dummy">
-					<?php
-					$args = array(
-						'taxonomy' => 'sp_season',
-						'name' => 'sp_season_dummy',
-						'class' => 'sp-dummy sp_season-dummy',
-						'show_option_all' => __( 'All', 'sportspress' ),
-						'selected' => $season_id,
-						'values' => 'term_id',
-					);
-					sp_dropdown_taxonomies( $args );
-					?>
-				</p>
-				<p class="sp-tab-select sp-title-generator">
-				<?php
-				$league = get_term( $league_id, 'sp_league' );
-				$league_slug = $league->slug;
-				$season = get_term( $season_id, 'sp_season' );
-				$season_slug = $season->slug;
-				$args = array(
-					'post_type' => 'sp_team',
-					'name' => 'sp_team[]',
-					'class' => 'sportspress-pages',
-					'show_option_none' => __( '&mdash; None &mdash;', 'sportspress' ),
-					'values' => 'ID',
-					'selected' => $team,
-					'chosen' => true,
-					'sp_league' => $league_slug,
-					'sp-season' => $season_slug,
-				);
-				sp_dropdown_pages( $args );
+		$post_type = sp_get_post_mode_type( $post->ID );
+		if ( $limit && 'sp_player' !== $post_type ) {
+			for ( $i = 0; $i < $limit; $i ++ ):
+				$team = array_shift( $teams );
 				?>
-				</p>
-				<?php $tabs = apply_filters( 'sportspress_event_team_tabs', array( 'sp_player', 'sp_staff' ) ); ?>
-				<?php if ( $tabs ) { ?>
-				<ul id="sp_team-tabs" class="wp-tab-bar sp-tab-bar">
-					<?php foreach ( $tabs as $index => $post_type ) { $object = get_post_type_object( $post_type ); ?>
-					<li class="wp-tab<?php if ( 0 == $index ) { ?>-active<?php } ?>"><a href="#<?php echo $post_type; ?>-all"><?php echo $object->labels->name; ?></a></li>
-					<?php } ?>
-				</ul>
-				<?php
-					foreach ( $tabs as $index => $post_type ) {
-						sp_post_checklist( $post->ID, $post_type, ( 0 == $index ? 'block' : 'none' ), array( 'sp_league', 'sp_season', 'sp_current_team' ), $i );
+				<div class="sp-instance">
+					<p class="sp-tab-select sp-title-generator">
+					<?php
+					$args = array(
+						'post_type' => $post_type,
+						'name' => 'sp_team[]',
+						'class' => 'sportspress-pages',
+						'show_option_none' => __( '&mdash; None &mdash;', 'sportspress' ),
+						'values' => 'ID',
+						'selected' => $team,
+						'chosen' => true,
+						'tax_query' => array(),
+					);
+					if ( 'yes' == get_option( 'sportspress_event_filter_teams_by_league', 'no' ) ) {
+						$league_id = sp_get_the_term_id( $post->ID, 'sp_league', 0 );
+						if ( $league_id ) {
+							$args['tax_query'][] = array(
+								'taxonomy' => 'sp_league',
+								'terms' => $league_id,
+							);
+						}
 					}
-				?>
-				<?php } ?>
-			</div>
+					if ( 'yes' == get_option( 'sportspress_event_filter_teams_by_season', 'no' ) ) {
+						$season_id = sp_get_the_term_id( $post->ID, 'sp_season', 0 );
+						if ( $season_id ) {
+							$args['tax_query'][] = array(
+								'taxonomy' => 'sp_season',
+								'terms' => $season_id,
+							);
+						}
+					}
+					if ( ! sp_dropdown_pages( $args ) ) {
+						unset( $args['tax_query'] );
+						sp_dropdown_pages( $args );
+					}
+					?>
+					</p>
+					<?php
+					$tabs = array();
+					$sections = get_option( 'sportspress_event_performance_sections', -1 );
+					if ( 0 == $sections ) {
+						$tabs['sp_offense'] = array(
+							'label' => __( 'Offense', 'sportspress' ),
+							'post_type' => 'sp_player',
+						);
+						$tabs['sp_defense'] = array(
+							'label' => __( 'Defense', 'sportspress' ),
+							'post_type' => 'sp_player',
+						);
+					} elseif ( 1 == $sections ) {
+						$tabs['sp_defense'] = array(
+							'label' => __( 'Defense', 'sportspress' ),
+							'post_type' => 'sp_player',
+						);
+						$tabs['sp_offense'] = array(
+							'label' => __( 'Offense', 'sportspress' ),
+							'post_type' => 'sp_player',
+						);
+					} else {
+						$tabs['sp_player'] = array(
+							'label' => __( 'Players', 'sportspress' ),
+							'post_type' => 'sp_player',
+						);
+					}
+					$tabs['sp_staff'] = array(
+						'label' => __( 'Staff', 'sportspress' ),
+						'post_type' => 'sp_staff',
+					);
+					?>
+					<?php if ( $tabs ) { ?>
+					<ul id="sp_team-tabs" class="sp-tab-bar category-tabs">
+						<?php
+							$j = 0;
+							foreach ( $tabs as $slug => $tab ) {
+								?>
+								<li class="<?php if ( 0 == $j ) { ?>tabs<?php } ?>"><a href="#<?php echo $slug; ?>-all"><?php echo $tab['label']; ?></a></li>
+								<?php
+								$j++;
+							}
+						?>
+					</ul>
+					<?php
+						$j = 0;
+						foreach ( $tabs as $slug => $tab ) {
+							do_action( 'sportspress_event_teams_meta_box_checklist', $post->ID, $tab['post_type'], ( 0 == $j ? 'block' : 'none' ), $team, $i, $slug );
+							$j++;
+						}
+					?>
+					<?php } ?>
+				</div>
+				<?php
+			endfor;
+		} else {
+			?>
+			<p><strong><?php printf( __( 'Select %s:', 'sportspress' ), sp_get_post_mode_label( $post->ID ) ); ?></strong></p>
 			<?php
-		endfor;
+			$args = array(
+				'post_type' => $post_type,
+				'name' => 'sp_team[]',
+				'selected' => $teams,
+				'values' => 'ID',
+				'class' => 'widefat',
+				'property' => 'multiple',
+				'chosen' => true,
+				'placeholder' => __( 'None', 'sportspress' ),
+			);
+			if ( ! sp_dropdown_pages( $args ) ):
+				sp_post_adder( $post_type, __( 'Add New', 'sportspress' )  );
+			endif;
+		}
+		wp_nonce_field( 'sp-get-players', 'sp-get-players-nonce', false );
 	}
 
 	/**
 	 * Save meta box data
 	 */
 	public static function save( $post_id, $post ) {
-		sp_update_post_meta_recursive( $post_id, 'sp_team', sp_array_value( $_POST, 'sp_team', array() ) );
-		$tabs = apply_filters( 'sportspress_event_team_tabs', array( 'sp_player', 'sp_staff' ) );
-		if ( $tabs ) {
-			foreach ( $tabs as $post_type ) {
-				sp_update_post_meta_recursive( $post_id, $post_type, sp_array_value( $_POST, $post_type, array() ) );
+		$teams = sp_array_value( $_POST, 'sp_team', array() );
+
+		sp_update_post_meta_recursive( $post_id, 'sp_team', $teams );
+
+		$post_type = sp_get_post_mode_type( $post->ID );
+
+		if ( 'sp_player' === $post_type ) {
+			$players = array();
+			foreach ( $teams as $player ) {
+				$players[] = array( 0, $player );
 			}
+			sp_update_post_meta_recursive( $post_id, 'sp_player', $players );
+		} else {
+			$tabs = array();
+			$sections = get_option( 'sportspress_event_performance_sections', -1 );
+			if ( -1 == $sections ) {
+				sp_update_post_meta_recursive( $post_id, 'sp_player', sp_array_value( $_POST, 'sp_player', array() ) );
+			} else {
+				$players = array_merge( sp_array_value( $_POST, 'sp_offense', array() ), sp_array_value( $_POST, 'sp_defense', array() ) );
+				sp_update_post_meta_recursive( $post_id, 'sp_offense', sp_array_value( $_POST, 'sp_offense', array() ) );
+				sp_update_post_meta_recursive( $post_id, 'sp_defense', sp_array_value( $_POST, 'sp_defense', array() ) );
+				sp_update_post_meta_recursive( $post_id, 'sp_player', $players );
+			}
+			sp_update_post_meta_recursive( $post_id, 'sp_staff', sp_array_value( $_POST, 'sp_staff', array() ) );
 		}
 	}
 }
